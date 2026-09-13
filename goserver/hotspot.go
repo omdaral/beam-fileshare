@@ -4,6 +4,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -14,6 +15,7 @@ const (
 	linuxGateway   = "10.42.0.1"
 	cmdTimeout     = 10 * time.Second
 )
+
 var (
 	hsMu         sync.Mutex
 	hsRunning    bool
@@ -24,6 +26,7 @@ var (
 	hsPassword   string
 	hsOwnProfile bool
 )
+
 // recordHotspot stores the running state and builds the info map.
 func recordHotspot(ssid, password string, port int, openNet bool, lang string) (string, map[string]interface{}) {
 	ip := gatewayIP()
@@ -52,11 +55,13 @@ func recordHotspot(ssid, password string, port int, openNet bool, lang string) (
 	}
 	return tr(lang, "hs_started", ssid, info["url"].(string), warn), info
 }
+
 // HotspotStart starts the hotspot and opens the port.
 // Returns (ok, msg_ar, info).
 func HotspotStart(ssid, password string, port int, openNet bool, lang string) (bool, string, map[string]interface{}) {
 	return HotspotStartWithPkexec(ssid, password, port, openNet, lang, false)
 }
+
 // HotspotStartWithPkexec threads pkexec explicitly (no global env).
 func HotspotStartWithPkexec(ssid, password string, port int, openNet bool, lang string, usePkexec bool) (bool, string, map[string]interface{}) {
 	ssid = validateSSID(ssid)
@@ -96,10 +101,12 @@ func HotspotStartWithPkexec(ssid, password string, port int, openNet bool, lang 
 	msg, info := recordHotspot(ssid, password, port, openNet, lang)
 	return true, msg, info
 }
+
 // HotspotStop stops the hotspot. Returns (ok, msg_ar).
 func HotspotStop(lang string) (bool, string) {
 	return HotspotStopWithPkexec(lang, false)
 }
+
 // HotspotStopWithPkexec threads pkexec explicitly (no global env).
 func HotspotStopWithPkexec(lang string, usePkexec bool) (bool, string) {
 	hsMu.Lock()

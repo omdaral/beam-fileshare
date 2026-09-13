@@ -13,6 +13,7 @@ type sharedEntry struct {
 	Mtime float64
 	Depth int // 1 = top level ("a.txt"), 2 = "dir/a.txt", ...
 }
+
 // walkShared lists regular share files up to limit, sorted by path.
 // Dotfiles/dotdirs, symlinks, .uploads and non-regular files are skipped.
 // Entries deeper than maxRelDepth are skipped and reported via deepUnder
@@ -79,6 +80,7 @@ func walkShared(limit int) (entries []sharedEntry, truncated bool, deepUnder map
 	sort.Slice(entries, func(i, j int) bool { return entries[i].Path < entries[j].Path })
 	return entries, false, deepUnder
 }
+
 // walkSharedDir lists regular files under one validated rel dir.
 func walkSharedDir(rel string, limit int) ([]sharedEntry, bool) {
 	root := filepath.Join(SharedDir, rel)
@@ -147,6 +149,7 @@ func walkSharedDir(rel string, limit int) ([]sharedEntry, bool) {
 	sort.Slice(out, func(i, j int) bool { return out[i].Path < out[j].Path })
 	return out, truncated
 }
+
 // dirJSON describes one folder for the tree UI.
 // Over is "" (expandable) or "files"/"depth"/"list": over-cap folders must
 // be shown as a direct zip row with the reason, never expanded.
@@ -155,6 +158,7 @@ type dirJSON struct {
 	Files int    `json:"files"`
 	Over  string `json:"over,omitempty"`
 }
+
 // buildDirStats aggregates recursive file counts from a listing.
 func buildDirStats(entries []sharedEntry, deepUnder map[string]bool, truncated bool) []dirJSON {
 	counts := map[string]int{}

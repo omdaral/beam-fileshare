@@ -1,9 +1,7 @@
 package beamcore
 
 import (
-	"runtime"
 	"strings"
-	"time"
 )
 
 // cmdDetail picks stderr, else stdout, trimmed to 200 runes, else fallback.
@@ -20,6 +18,7 @@ func cmdDetail(out, errStr, fallback string) string {
 	}
 	return detail
 }
+
 // bringUpWindows tries WinRT tethering, falling back to netsh hostednetwork.
 func bringUpWindows(ssid, password, lang string) (bool, string) {
 	winOK, winDetail := winTetherStart(ssid, password, lang)
@@ -40,6 +39,7 @@ func bringUpWindows(ssid, password, lang string) (bool, string) {
 	}
 	return true, ""
 }
+
 // bringUpLinuxHotspot creates the nmcli Hotspot profile (and converts it to
 // an open network when requested). Returns errKey detail ("" when ok).
 func bringUpLinuxHotspot(ssid, password string, openNet bool, lang string, usePkexec bool) string {

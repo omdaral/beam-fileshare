@@ -10,6 +10,7 @@ type dnsQuestion struct {
 	name  string // lowercased, no trailing dot
 	qtype uint16
 }
+
 // parseQuestion reads the first question of a DNS message.
 // Returns false for responses, malformed packets, or zero questions.
 func parseQuestion(msg []byte) (id uint16, q dnsQuestion, ok bool) {
@@ -31,6 +32,7 @@ func parseQuestion(msg []byte) (id uint16, q dnsQuestion, ok bool) {
 		dnsQuestion{name: name, qtype: binary.BigEndian.Uint16(msg[off : off+2])},
 		true
 }
+
 // readName decodes a possibly compressed domain name.
 func readName(msg []byte, off int) (string, int, bool) {
 	var parts []string
@@ -83,6 +85,7 @@ func encodeName(name string) []byte {
 	}
 	return append(out, 0)
 }
+
 // answerPacket builds an mDNS/LLMNR response advertising ips as A records.
 // When mdns is true: ID 0, no question echo (multicast announce), class
 // WITH cache-flush bit (0x8001) and mDNS TTL.
@@ -127,6 +130,7 @@ func answerPacket(name string, ips []net.IP, id uint16, question []byte, mdns bo
 	binary.BigEndian.PutUint16(msg[6:8], uint16(n))
 	return msg
 }
+
 // nodataPacket answers AAAA-with-no-data (stops resolver retries).
 func nodataPacket() []byte {
 	msg := make([]byte, 12)

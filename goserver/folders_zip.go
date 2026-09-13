@@ -3,16 +3,22 @@ package beamcore
 import (
 	"archive/zip"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
 
 var (
 	errTooMany = errors.New("too many files")
+	errTooBig  = errors.New("too big")
+	errEmpty   = errors.New("empty")
+)
+
 // extractZipAsync unpacks an uploaded folder-zip in the background, AFTER
 // the 200 response. Transfer is never touched: on any failure the zip
 // stays as is and only a log line is written.
@@ -29,12 +35,14 @@ func extractZipAsync(zipPath, rel, cip string) {
 	invalidateFileHashIn(sharedDir, rel)
 	writeLog(cip, "unzip", target+" ("+strconv.FormatInt(int64(n), 10)+" files)")
 }
+
 // extractZip unpacks zipPath into Shared/, validating every entry with
 // safeRelPath (zip-slip safe), skipping symlinks/dotfiles, never
 // overwriting (uniquePath), within caps. Returns file count + top dir.
 func extractZip(zipPath string) (int, string, error) {
 	return extractZipIn(SharedDir, zipPath)
 }
+
 // extractZipIn is the dir-parameterized core (see extractZipAsync).
 func extractZipIn(sharedDir, zipPath string) (int, string, error) {
 	zr, err := zip.OpenReader(zipPath)
@@ -143,6 +151,7 @@ func invalidateFileHashPrefixIn(sharedDir, prefix string) {
 		}
 	}
 }
+
 // pruneEmptyParents removes newly-emptied ancestor dirs of a deleted path.
 // os.Remove only removes empty dirs, so non-empty ones stop the climb.
 func pruneEmptyParents(rel string) {
@@ -154,6 +163,7 @@ func pruneEmptyParents(rel string) {
 		dir, _ = splitParent(dir)
 	}
 }
+
 // handleDownloadZip streams a folder as a zip archive (GET only).
 // Pre-scans first so cap failures return clean JSON instead of a broken zip.
 func handleDownloadZip(w http.ResponseWriter, r *http.Request) {

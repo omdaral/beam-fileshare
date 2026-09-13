@@ -3,6 +3,7 @@ package beamcore
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -40,6 +41,7 @@ func safeFilename(name string) string {
 	}
 	return name
 }
+
 // safeRelPath validates a share-relative path like "Docs/2026/a.pdf".
 // Every segment must pass the safeFilename rules and must not be a
 // dotfile/dotdir; depth and total length are capped. Returns "" when
@@ -76,6 +78,7 @@ func safeRelPath(name string) string {
 	}
 	return strings.Join(clean, "/")
 }
+
 // splitParent splits a validated rel path into dir and base ("a/b/c" ->
 // "a/b", "c"; "c" -> "", "c").
 func splitParent(rel string) (string, string) {
@@ -84,6 +87,7 @@ func splitParent(rel string) (string, string) {
 	}
 	return "", rel
 }
+
 // uniquePath returns a non-existing path, appending " (i)" like fileshare.
 // Bounded at 10000 attempts, then falls back to a timestamp suffix so a
 // malicious dir with a million collisions can't hang the server.
@@ -102,6 +106,7 @@ func uniquePath(directory, name string) string {
 	}
 	return filepath.Join(directory, base+" ("+strconv.FormatInt(nowNano(), 10)+")"+ext)
 }
+
 // percentEncode mimics urllib.parse.quote(name) for attachment filenames.
 // Kept (not url.PathEscape): verified stricter — also escapes + = @,
 // which PathEscape leaves raw inside path segments. See TestStdlibDivergence.

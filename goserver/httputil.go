@@ -3,9 +3,12 @@ package beamcore
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // clientIP returns the peer IP without port.
@@ -16,6 +19,7 @@ func clientIP(r *http.Request) string {
 	}
 	return host
 }
+
 // isLoopback reports localhost peers (variable so tests can simulate guests).
 // Whole 127/8 + ::1 are loopback per RFC1122 (net.IP.IsLoopback).
 var isLoopback = func(ip string) bool {
@@ -29,6 +33,7 @@ var isLoopback = func(ip string) bool {
 	}
 	return parsed.IsLoopback()
 }
+
 // sendJSON writes a JSON object with UTF-8 body (no HTML escaping).
 func sendJSON(w http.ResponseWriter, r *http.Request, status int, obj interface{}) {
 	var buf bytes.Buffer
@@ -49,12 +54,14 @@ func sendJSON(w http.ResponseWriter, r *http.Request, status int, obj interface{
 	}
 	_, _ = w.Write(body)
 }
+
 // sendEmpty writes a status with zero body (mirrors _send_empty).
 func sendEmpty(w http.ResponseWriter, r *http.Request, status int) {
 	w.Header().Set("Content-Length", "0")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(status)
 }
+
 // readJSONBody decodes a JSON object body (empty/invalid -> empty map).
 func readJSONBody(r *http.Request, maxBytes int64) map[string]interface{} {
 	out := map[string]interface{}{}

@@ -1,11 +1,9 @@
 package beamcore
 
 import (
-	"encoding/binary"
 	"fmt"
 	"net"
 	"strings"
-	"time"
 )
 
 const (
@@ -16,10 +14,18 @@ const (
 	mdnsTTL = 120
 
 	// LLMNR (RFC 4795) for the bare Windows name http://beam:2004.
+	llmnrAddr = "224.0.0.252:5355"
+
+	// Short unicast TTL per RFC 4795 (mDNS uses the long one above).
+	llmnrTTL = 30
+)
+
 var llmnrNames = map[string]bool{"beam": true, "b": true}
+
 func isLLMNRName(name string) bool {
 	return llmnrNames[name]
 }
+
 // StartNameDiscovery advertises the machine's LAN IPs under beam.local
 // (mDNS) and beam/b (LLMNR for Windows).
 // getIPs is consulted per query so address changes (hotspot
@@ -71,6 +77,7 @@ func mdnsLoop(getIPs func() []string) {
 		_ = src
 	}
 }
+
 // llmnrLoop answers single-label LLMNR queries for beam/b with unicast
 // replies (RFC 4795). Only Windows guests ask LLMNR in practice; other OSes
 // never query it, so answering is harmless and coexists via SO_REUSEPORT
@@ -101,6 +108,7 @@ func llmnrLoop(getIPs func() []string) {
 		}
 	}
 }
+
 // llmnrResponse builds the unicast reply for one raw LLMNR query packet,
 // or nil when the packet is not for us (wrong name/type, response packet,
 // malformed, or no LAN IPs for an A query). Pure function for testability:
@@ -126,6 +134,7 @@ func llmnrResponse(pkt []byte, getIPs func() []string) []byte {
 	}
 	return nil
 }
+
 // extractQuestion returns the raw question section bytes (QNAME+QTYPE+QCLASS)
 // of a query packet, or nil when the packet is malformed. Used to echo the
 // question back in LLMNR unicast replies.

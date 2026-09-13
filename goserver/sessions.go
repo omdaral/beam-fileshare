@@ -21,6 +21,7 @@ type sessionMeta struct {
 	NoVerify bool       `json:"noverify,omitempty"`
 	Extract  bool       `json:"extract,omitempty"`
 }
+
 func uploadsDir() string {
 	d := filepath.Join(SharedDir, uploadsDirname)
 	_ = os.MkdirAll(d, 0755)
@@ -86,11 +87,13 @@ func sessReceived(uid string) int64 {
 	}
 	return st.Size()
 }
+
 type sessInfo struct {
 	UID   string
 	Meta  *sessionMeta
 	Mtime float64
 }
+
 func iterSessions() []sessInfo {
 	out := []sessInfo{}
 	root := uploadsDir()
