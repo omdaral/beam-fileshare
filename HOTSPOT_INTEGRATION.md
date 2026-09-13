@@ -1,42 +1,42 @@
-# تكامل الهوتسبوت مع السيرفر (Go)
+# Hotspot Integration with the Server (Go)
 
-> موديول الشبكة الآن جزء من الباينري: `goserver/net.go` (stdlib فقط).
+> The network module is now part of the binary: `goserver/hotspot*.go` + `goserver/netclients.go` + `goserver/runcmd.go` (stdlib only).
 
-## 1. مثال الاستدعاء من السيرفر
+## 1. Example server call
 
 ```go
-// تشغيل الشبكة (SSID افتراضي Beam، باسورد 8+ أحرف)
+// Start networking (default SSID Beam, 8+ character password)
 ok, msg, info := hotspotStart("Beam", "password123", 2004, false)
 fmt.Println(msg)
 if ok {
-    fmt.Println("الرابط:", info["url"]) // مثال: http://192.168.137.1:2004
+    fmt.Println("URL:", info["url"]) // example: http://192.168.137.1:2004
 } else {
-    // الهوتسبوت مستحيل؟ استخدم وضع LAN البديل
+    // Hotspot impossible? Use LAN fallback mode
     fb := lanFallbackInfo(2004)
     fmt.Println(fb["message_ar"], fb["url"])
 }
 
-// الحالة والإيقاف
+// Status and stop
 fmt.Println(hotspotStatus()) // {running, ssid, ip, port, clients}
 ok, msg = hotspotStop()
 ```
 
-## 2. أعلام سطر الأوامر (في `goserver/main.go`)
+## 2. Command-line flags (in `goserver/main.go`)
 
 ```
---hotspot                تشغيل هوتسبوت قبل السيرفر
---ssid Beam     اسم الشبكة
---password password123   باسورد الهوتسبوت (8+ أحرف)
---open                   شبكة مفتوحة بدون باسورد (لينكس فقط)
---lan-mode               تخطي الهوتسبوت والعمل على الشبكة الحالية
---port 2004              البورت الثابت (الافتراضي 2004)
---lang ar                اللغة الافتراضية للزوار الجدد (ar/en)
---no-browser             عدم فتح المتصفح تلقائياً عند التشغيل
---idle-timeout 5h        إغلاق تلقائي بعد الخمول (0 للتعطيل)
+--hotspot                start hotspot before server
+--ssid Beam     network name
+--password password123   hotspot password (8+ chars)
+--open                   open network with no password (Linux only)
+--lan-mode               skip hotspot and work on the current network
+--port 2004              fixed port (default 2004)
+--lang ar                default language for new visitors (ar/en)
+--no-browser             do not open the browser automatically at startup
+--idle-timeout 5h        auto shutdown after idle (0 to disable)
 ```
 
-- `--hotspot --ssid Beam --password password123` → يستدعي `hotspotStart(...)` ثم يشغّل السيرفر.
-- `--lan-mode` (أو فشل `start`) → يستدعي `lanFallbackInfo(port)` ويطبع `url` للعملاء.
-- عند الإيقاف (Ctrl+C) → يستدعي `hotspotStop()`.
-- من المتصفح (جهاز التشغيل): `POST /api/net/start` بنفس الخيارات — ولو نقصت الصلاحية
-  حاول السيرفر عبر `pkexec` تلقائياً (بوب-أب النظام على جهازك فقط)، وإلا fallback لـ LAN.
+- `--hotspot --ssid Beam --password password123` → calls `hotspotStart(...)` then starts the server.
+- `--lan-mode` (or `start` failure) → calls `lanFallbackInfo(port)` and prints `url` for clients.
+- On stop (Ctrl+C) → calls `hotspotStop()`.
+- From the browser (host machine): `POST /api/net/start` with the same options — and if privileges are missing
+  the server tries `pkexec` automatically (system popup on your machine only), otherwise falls back to LAN.

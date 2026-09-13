@@ -1,37 +1,37 @@
-# Beam — ملاحظات التغليف (PACKAGING NOTES)
-النسخة: `1.6.0` — النطاق الحالي: سيرفر Go + هوتسبوت + صفحة ويب + إدارة متصفح.
+# Beam — Packaging Notes (PACKAGING NOTES)
+Version: `1.6.0` — Current scope: Go server + hotspot + web page + browser management.
 
-## 1) ماذا يبني التغليف؟
-- الدخل: `goserver/` (stdlib فقط — بدون أي dependency).
-- الخرج:
-  - لينكس: `Beam` بجانب `Beam.sh` (المشغّل) و `Beam.desktop` (الأيقونة).
-  - ويندوز: `Beam.exe` بجانب `Beam.bat`.
-- الباينري static تماماً (`CGO_ENABLED=0`) — **لا glibc ولا DLL ولا Python ولا pip على جهاز المستخدم**.
-- صفحة الويب مضمنة في الباينري (`go:embed goserver/web/index.html`).
-- وقت التشغيل: **لا ملفات جانبية** — لا `config.json` ولا `logs/` ولا `Shared/` بجانب التنفيذي.
-  الملفات الوحيدة: `~/Downloads/Beam` (مجلد المشاركة المعروف) + سجل `/tmp/beam-server.log` للمشغّلات فقط.
+## 1) What does packaging build?
+- Input: `goserver/` (stdlib only — zero dependencies).
+- Output:
+  - Linux: `Beam` next to `Beam.sh` (launcher) and `Beam.desktop` (icon).
+  - Windows: `Beam.exe` next to `Beam.bat`.
+- Binary is fully static (`CGO_ENABLED=0`) — **no glibc, no DLL, no Python, and no pip on the user machine**.
+- Web page is embedded in the binary (`go:embed goserver/web/index.html`).
+- At runtime: **no sidecar files** — no `config.json`, no `logs/`, and no `Shared/` next to the executable.
+  The only files: `~/Downloads/Beam` (well-known share folder) + `/tmp/beam-server.log` log for launchers only.
 
-## 2) التوافق
-- لينكس: أي توزيعة حديثة amd64 (static — لا يشترط glibc معيناً). ابنِ بـ `./build.sh`.
-- ويندوز: ابنِ الـ exe على أي نظام بـ `GOOS=windows` (أو `build.bat` على ويندوز). الهوتسبوت هناك عبر WinRT أولاً ثم netsh.
-- التشغيل على الجهاز المستهدف لا يحتاج Go ولا Python ولا pip ولا Admin (Admin أول مرة فقط للهوتسبوت/الفايروول).
+## 2) Compatibility
+- Linux: any modern amd64 distro (static — no specific glibc required). Build with `./build.sh`.
+- Windows: build the exe on any system with `GOOS=windows` (or `build.bat` on Windows). Hotspot there uses WinRT first, then netsh.
+- Running on the target machine needs no Go, no Python, no pip, and no Admin (Admin only the first time for hotspot/firewall).
 
-## 3) حدود معروفة
-1. **SmartScreen ويندوز:** الـ exe غير موقّع → `More info` → `Run anyway` أول مرة (طبيعي لبرامج داخلية).
-2. **البورت المحجوز:** البورت ثابت `2004` — لو مشغول يطبع البرنامج رسالة عربية ويقترح بورتاً بديلاً (exit=2) — الحل: `Beam --port 2005`.
-3. **نقل المجلد:** مسارات `.desktop` مطلقة بطبيعة المواصفة — بعد كل نسخ نفّذ `./install.sh`
-   في المكان الجديد فيولّد المسارات الصحيحة ويتحقق من الصياغة تلقائياً.
+## 3) Known limits
+1. **Windows SmartScreen:** unsigned exe → `More info` → `Run anyway` the first time (normal for internal tools).
+2. **Reserved port:** port is fixed at `2004` — if busy the program prints an Arabic message and suggests an alternate port (exit=2) — fix: `Beam --port 2005`.
+3. **Folder move:** `.desktop` paths are absolute by spec nature — after every copy run `./install.sh`
+    in the new location to regenerate the correct paths and auto-validate the syntax.
 
-## 4) أوامر سريعة
+## 4) Quick commands
 ```bash
-./build.sh                        # فحص + اختبارات + مصفوفة المنصات في dist/<os>/<arch>/<version>/
-./install.sh                      # بعد كل نسخ للمجلد: يولّد مسارات الأيقونة ويفحصها
-./Beam.sh --no-browser       # تشغيل من التيرمينال بدون فتح المتصفح
-curl -s http://127.0.0.1:2004/health      # تحقق: {"ok": true}
-go -C goserver test ./...                 # كل الاختبارات
+./build.sh                        # check + tests + platform matrix in dist/<os>/<arch>/<version>/
+./install.sh                      # after every folder copy: regenerates icon paths and checks them
+./Beam.sh --no-browser       # run from terminal without opening the browser
+curl -s http://127.0.0.1:2004/health      # verify: {"ok": true}
+go -C goserver test ./...                 # all tests
 ```
 ```bat
-REM ويندوز:
+REM Windows:
 build.bat
 Beam.exe
 ```

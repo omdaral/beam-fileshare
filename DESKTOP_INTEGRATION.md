@@ -1,9 +1,9 @@
-# نافذة الديسكتوب — محذوفة (DEPRECATED)
+# Desktop Window — Removed (DEPRECATED)
 
-> أُزيلت نافذة tkinter (`desktop.py`) نهائياً ضمن الاستبدال الكامل بـ Go.
-> البديل: **قسم إدارة الشبكة والجهاز في المتصفح** — يظهر تلقائياً لجهاز التشغيل
-> (`localhost` مدير)، وأي طلب إداري من غيره مرفوض (`403` — لا دخول عن بعد نهائياً).
+> The tkinter window (`desktop.py`) was removed permanently as part of the full replacement with Go.
+> Replacement: **network and device management section in the browser** — shown automatically on the host machine
+> (`localhost` is manager), and any admin request from elsewhere is rejected (`403` — no remote access at all).
 
-رحلة المستخدم (≤ 3 ضغطات حسب `docs/02`): دبل كليك الأيقونة ← **تشغيل الشبكة** من المتصفح ← شارك الـ QR.
+User journey (≤ 3 clicks per `docs/02`): double-click the icon ← **start networking** from the browser ← share the QR.
 
-المرجع الحالي: `README.md` + سورس الإدارة في `goserver/admin.go` وواجهتها في `goserver/web/index.html`.
+Current reference: `README.md` + admin source in `goserver/auth.go` + `goserver/status.go` + `goserver/net_admin.go` + `goserver/config_admin.go` and its UI in `goserver/web/index.html`.

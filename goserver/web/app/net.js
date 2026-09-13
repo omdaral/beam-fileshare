@@ -312,7 +312,7 @@ function autoSave(){
 // تعمل فقط داخل غلاف Capacitor على أندرويد: خدمة أمامية بإشعار دائم تُبقي
 // عملية الرفع حية والشاشة مقفولة. على المتصفح/الديسكتوب لا تفعل شيئاً إطلاقاً.
 // BG-FALLBACK: لو جمّدت WebView المؤقتات في الخلفية رغم الخدمة على بعض
-// الأجهزة، الحل بلجن محلي صغير يستدعي WebView.resumeTimers() (راجع mobile/SETUP-ar.md).
+// الأجهزة، الحل بلجن محلي صغير يستدعي WebView.resumeTimers() (راجع mobile/SETUP.md).
 var bgOn=false,bgLastActive=0;
 var isLocalServer=(location.hostname==="127.0.0.1"||location.hostname==="localhost");
 var bgWakeLock=null; // Screen Wake Lock: يمنع نوم الشاشة أثناء النقل (متصفح + تطبيق)

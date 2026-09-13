@@ -136,7 +136,7 @@ _jv="؟"; [ -n "$_eff_java" ] && _jv="$("$_eff_java" -version 2>&1 | head -1 | g
 _ndk="ناقص"; [ -n "$(ls -d "${ANDROID_HOME:-/nonexistent}"/ndk/* 2>/dev/null)" ] && _ndk="موجود"
 echo "  Android (APK): java $_jv ($_eff_java) + node ($(have node)) + gomobile ($(have gomobile)) + ANDROID_HOME=${ANDROID_HOME:-unset} + NDK ($_ndk)"
 if [ "$_jv" != "؟" ] && [ "$_jv" -lt 21 ] 2>/dev/null; then
-  skip "JDK $_jv أقدم من 21 — الـ APK سيُتخطى (ثبّت JDK 21: راجع mobile/SETUP-ar.md)."
+  skip "JDK $_jv أقدم من 21 — الـ APK سيُتخطى (ثبّت JDK 21: راجع mobile/SETUP.md)."
 fi
 echo "  → الباينريات الست + ZIPs المحمولة + deb + rpm تُبنى هنا."
 if [ "$(have mksquashfs)" = "ناقص" ]; then
@@ -229,7 +229,7 @@ if [ -d "$APP_DIR/mobile" ]; then
       tail -15 "$BUILDLOG"
       echo "--- نهاية المقتطف ---"
     fi
-    note "⚠️ تعثر بناء APK (النشر مستمر — يحتاج: JDK 21 + Android SDK/NDK + Node — راجع mobile/SETUP-ar.md)."
+    note "⚠️ تعثر بناء APK (النشر مستمر — يحتاج: JDK 21 + Android SDK/NDK + Node — راجع mobile/SETUP.md)."
     echo "   لإعادة بناء الـ APK وحده لاحقاً: ./mobile/build-apk.sh"
   fi
 else

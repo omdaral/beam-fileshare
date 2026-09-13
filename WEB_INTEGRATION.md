@@ -1,29 +1,29 @@
-# دمج الواجهة في الباينري (Go)
+# Embedding the UI in the Binary (Go)
 
-صفحة واحدة للجميع: `goserver/web/index.html` (منطقة المالك `#ownerZone` تظهر لـ localhost فقط — والـ APIs ترفض غيره)، مضمنة في الباينري عبر:
+One page for everyone: `goserver/web/index.html` (owner zone `#ownerZone` shows for localhost only — and the APIs reject anyone else), embedded in the binary via:
 
 ```go
 //go:embed web/index.html
 var indexHTML []byte
 ```
 
-- `/` و`/index.html` و`/admin` و`/guest` تقدم نفس الصفحة (لا روابط مكسورة).
-- **i18n:** قاموس `STR` (عربي افتراضي + إنجليزي)، سمات `data-i18n` للنصوص الثابتة ودالة `T()` للديناميكي، زر اللغة في الهيدر + صف الإعدادات، `document.dir/lang` يتبدلان، الاختيار محفوظ (`beam-lang`). رسائل السيرفر ثنائية عبر ترويسة `X-Lang` (وجدول `goserver/i18n.go`).
-- لو وُجد ملف `index.html` بجانب الباينري يُقدَّم بدل المضمنة (لوضع التطوير فقط).
+- `/` and `/index.html` and `/admin` and `/guest` serve the same page (no broken links).
+- **i18n:** `STR` dictionary (default Arabic + English), `data-i18n` attributes for static text and `T()` function for dynamic text, language button in the header + settings row, `document.dir/lang` switch, choice persisted (`beam-lang`). Bilingual server messages via the `X-Lang` header (and the `goserver/i18n.go` table).
+- If an `index.html` file sits next to the binary it is served instead of the embedded one (development mode only).
 
-- `/` و`/index.html` و`/admin` و`/guest` تقدم نفس الصفحة الواحدة (توافق مع الروابط القديمة).
-- منطقة المالك تُخفى لغير localhost، وكل API إداري يرفض غيره (403).
-- لو وُجد ملف `index.html` بجانب الباينري يُقدَّم بدل المضمنة (لوضع التطوير فقط).
+- `/` and `/index.html` and `/admin` and `/guest` serve the same single page (compatibility with old links).
+- Owner zone is hidden from non-localhost, and every admin API rejects others (403).
+- If an `index.html` file sits next to the binary it is served instead of the embedded one (development mode only).
 
-- السيرفر يخدمها على `GET /` مع `Cache-Control: no-store` (دائماً الأحدث).
-- لو وُجد ملف `index.html` بجانب الباينري يُقدَّم بدل المضمنة (لوضع التطوير فقط).
-- عقد الحالة للإدارة: `GET /api/status` (عام) + `GET /api/net/status` (تفاصيل المدير).
+- The server serves it on `GET /` with `Cache-Control: no-store` (always the latest).
+- If an `index.html` file sits next to the binary it is served instead of the embedded one (development mode only).
+- Status contract for management: `GET /api/status` (public) + `GET /api/net/status` (manager details).
 
-## الاختبار بـ `curl`
+## Testing with `curl`
 
 ```bash
 go -C goserver run ./cmd/beam --port 2004 --no-browser &
 curl -s http://127.0.0.1:2004/api/status
-curl -s http://127.0.0.1:2004/files   # مفتوح مباشرة بدون دخول (الأمان = باسورد الواي فاي)
+curl -s http://127.0.0.1:2004/files   # open directly with no login (security = Wi-Fi password)
 kill %1
 ```

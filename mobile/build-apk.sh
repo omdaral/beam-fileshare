@@ -29,15 +29,15 @@ if [ -d "$HOME/jdks" ]; then
   done
 fi
 if [ -n "${JAVA_HOME:-}" ]; then export PATH="$JAVA_HOME/bin:$PATH"; fi
-command -v java >/dev/null 2>&1 || { echo "❌ JDK غير مثبت (يحتاج JDK 21+ — راجع mobile/SETUP-ar.md: نزّل Temurin 21 في ~/jdks أو sudo apt install openjdk-21-jdk)"; exit 1; }
+command -v java >/dev/null 2>&1 || { echo "❌ JDK غير مثبت (يحتاج JDK 21+ — راجع mobile/SETUP.md: نزّل Temurin 21 في ~/jdks أو sudo apt install openjdk-21-jdk)"; exit 1; }
 JVER="$(java -version 2>&1 | head -1 | grep -oE '[0-9]+' | head -1)"
-[ "${JVER:-0}" -ge 21 ] || { echo "❌ JDK $JVER أقدم من المطلوب (Capacitor 8 يشترط 21+ — المستخدم الآن: $(command -v java)، راجع mobile/SETUP-ar.md)"; exit 1; }
+[ "${JVER:-0}" -ge 21 ] || { echo "❌ JDK $JVER أقدم من المطلوب (Capacitor 8 يشترط 21+ — المستخدم الآن: $(command -v java)، راجع mobile/SETUP.md)"; exit 1; }
 echo "  JDK $JVER ($(command -v java)) ✅"
 if [ -z "${ANDROID_HOME:-}" ]; then
   [ -d "$HOME/Android/Sdk" ] && export ANDROID_HOME="$HOME/Android/Sdk"
 fi
-[ -n "${ANDROID_HOME:-}" ] || { echo "❌ عرّف ANDROID_HOME على مجلد Android SDK أولاً (المتوقع ~/Android/Sdk — راجع mobile/SETUP-ar.md)"; exit 1; }
-[ -d "${ANDROID_HOME:-/nonexistent}" ] || { echo "❌ ANDROID_HOME=$ANDROID_HOME غير موجود — راجع mobile/SETUP-ar.md"; exit 1; }
+[ -n "${ANDROID_HOME:-}" ] || { echo "❌ عرّف ANDROID_HOME على مجلد Android SDK أولاً (المتوقع ~/Android/Sdk — راجع mobile/SETUP.md)"; exit 1; }
+[ -d "${ANDROID_HOME:-/nonexistent}" ] || { echo "❌ ANDROID_HOME=$ANDROID_HOME غير موجود — راجع mobile/SETUP.md"; exit 1; }
 echo "  ANDROID_HOME=$ANDROID_HOME ✅"
 
 VER="$(tr -d ' \t\r\n' < ../VERSION 2>/dev/null)"
@@ -57,9 +57,9 @@ if ! command -v gomobile >/dev/null 2>&1; then
     [ -x "$d/gomobile" ] && export PATH="$d:$PATH" && break
   done
 fi
-command -v gomobile >/dev/null 2>&1 || { echo "❌ تعذر تثبيت gomobile (ثبّته يدوياً: راجع mobile/SETUP-ar.md)"; exit 1; }
+command -v gomobile >/dev/null 2>&1 || { echo "❌ تعذر تثبيت gomobile (ثبّته يدوياً: راجع mobile/SETUP.md)"; exit 1; }
 NDK_DIR="$(ls -d "$ANDROID_HOME"/ndk/* 2>/dev/null | sort -V | tail -1)"
-[ -n "$NDK_DIR" ] || { echo "❌ ثبّت NDK أولاً: sdkmanager \"ndk;26.3.11579264\" (راجع mobile/SETUP-ar.md)"; exit 1; }
+[ -n "$NDK_DIR" ] || { echo "❌ ثبّت NDK أولاً: sdkmanager \"ndk;26.3.11579264\" (راجع mobile/SETUP.md)"; exit 1; }
 gomobile init -ndk "$NDK_DIR" >/dev/null 2>&1 || true
 echo "—— 1/5 محرك Go داخل التطبيق (beam.aar)"
 export TMPDIR="${TMPDIR:-/tmp}"

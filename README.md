@@ -1,128 +1,136 @@
-# Beam - مشاركة الملفات بين أجهزتك
+# Beam — Share your files between your devices in one click
 
-باينري واحد لكل نظام — بدون بايثون وبدون تثبيت أي حاجة على جهاز المستخدم.
-**بدون ملفات جانبية:** لا `config.json` ولا مجلد `logs/` ولا `Shared/` بجانب البرنامج — ملفاتك في `~/Downloads/Beam` (مكان تعرفه)، والإعدادات للجلسة فقط (+ نسخة في متصفحك)، والسجل في الذاكرة فقط.
+One small program per OS — **no Python and nothing to install** on your machine.
+Your files live in one place you know (`Downloads/Beam`), settings apply to the current session only, and there are no scattered files next to the program.
 
-## التشغيل بالدبل كليك (لينكس — بدون تثبيت أي حاجة)
-1. انسخ مجلد البرنامج كاملاً إلى أي مكان، ثم نفّذ مرة واحدة بعد كل نسخ:
+> **Current version:** `v1.6.0` — the version number appears in a badge on the home page so you can confirm you are running the latest build.
+
+---
+
+## Quick start
+
+### Linux (no install)
+
+1. Copy the whole program folder anywhere, then run this command once after each copy:
    ```bash
    ./install.sh
    ```
-   (يولّد مسارات الأيقونة الصحيحة حسب مكانها الجديد ويفحص صياغتها تلقائياً).
-2. افتح مجلد البرنامج في مدير الملفات (Nemo).
-3. دوس دبل كليك على أيقونة **Beam** (`Beam.desktop`).
-   - أول مرة فقط: كليك يمين عليها واختار **Allow Launching / Trust** لو طلب.
-   - (البديل: دبل كليك على `Beam` نفسه — السيرفر **يفتح المتصفح تلقائياً**.)
-4. هيفتح المتصفح على **صفحة Beam**: في أعلاها قسم **رابط دخول الأجهزة** بخط كبير + زر نسخ — شاركه أو امسح QR الواي فاي بالأسفل من أي موبايل. (نفس الرابط يُطبع في التيرمينال ويظهر كإشعار نظام لحظة التشغيل.)
-5. ملفاتك بتتحفظ في `~/Downloads/Beam` (مجلد التنزيلات ← Beam) — يظهر مساره في صفحة الويب نفسها. لا بلوت وير: مجلد واحد معروف، لا ملفات مبعثرة.
-6. **الإيقاف واضح:** زر دائري ⏻ **«إيقاف السيرفر»** في أعلى الصفحة (يظهر لصاحب الجهاز فقط — ضغطة واحدة توقف السيرفر وتقفل التاب) — أو `Ctrl+C` في التيرمينال.
-7. **راحة البال:** لو نسيت السيرفر شغالاً، يقفل نفسه تلقائياً بعد **5 ساعات بدون أي نشاط** (أي رفع/تنزيل/تصفح يصفّر العداد).
+2. Open the folder in the file manager and double-click the **Beam** icon.
+   - First time only: right-click it and choose **Allow Launching** if prompted.
+   - Alternative: double-click the `Beam` file itself — it will open the browser automatically.
+3. The program page will open in the browser: at the top a large **device login link** with a copy button — share it with any device.
+4. Your files are saved in `~/Downloads/Beam` (Downloads folder → Beam), and its path is shown on the same page.
+5. **Stopping:** round ⏻ button labeled **"Stop server"** at the top of the page (shown to the device owner only), or `Ctrl+C` in the terminal.
+6. **Peace of mind:** if you leave the server running, it will stop by itself after **5 hours with no activity** (any upload, download, or browsing resets the counter).
 
-> **لاندنج بيدج واحدة للجميع:** هيرو الدخول + خطوات + شبكة/QR + ملفات + مساعدة بعرض الشاشة. زر الإعدادات ⚙️ ونافذته (شبكة/عام/أجهزة وسجل/جهاز) يظهران لصاحب الجهاز فقط — وأي تنفيذ من غيره مرفوض. لا دخول عن بعد نهائياً.
-> البورت ثابت **2004**: رابط الدخول دائماً `http://<ip>:2004` — احفظه في متصفحك مرة واحدة.
+> The login link is always fixed on port **2004**: `http://<ip>:2004` — save it in your browser once.
 
-> الملفات المهمة للتشغيل: `Beam.desktop` (الأيقونة) + `Beam.sh` (المشغّل) + `Beam` (البرنامج) + `icon.png` + `VERSION`.
-> انسخ المجلد كله على أي جهاز لينكس ثم نفّذ `./install.sh` ودوس الأيقونة — لا بايثون ولا pip ولا أوامر.
-## المجلدات مضغوطة دائمًا + وضعا النقل (v1.5.0)
-- زر **ارفع مجلدًا**: يُضغط في متصفحك أولًا **دائمًا** (بأي وضع) ثم يُرفع كملف واحد سريع الاستكمال، ويُفك لشجرة على السيرفر بعد الاكتمال (الفشل يُبقي الـ zip فقط).
-- العرض **شجرة قابلة للطي** + **بحث فوري خفيف** (تصفية محلية بدون طلبات).
-- كل مجلد عليه **تنزيل zip** و**حذف** (تكراري بتأكيد ضغطتين)؛ والملفات المفردة تُحذف وحدها.
-- المجلد الذي يتجاوز السقف **لا يُعرض — يظهر كصف zip مباشر مع بيان السبب**.
-- **موثوق** (افتراضي): قطع 2MB ×3 + بصمة لكل قطعة + استكمال — للشبكات غير المستقرة. **تيربو**: قطع 8MB ×6 + تحقق نهائي واحد — لأقصى سرعة على المستقر (للرفع والتنزيل، والمفتاح عند كل عملية).
-- سقف الشرائط: الرفع بطابور موحد (×3) وصف مجمّع لكل مجلد (عداد + شريط إجمالي + إلغاء) + آخر 5 عمليات فقط — الفاشل يُثبّت ولا يُحذف تلقائياً.
-- للتأكد أنك مشغل الجديد: الصفحة تعرض `v1.6.0` (وأعلى) في شارة الهيرو.
+### Windows (no install)
 
-## التشغيل على ويندوز (بدون تثبيت أي حاجة)
-1. انسخ بجانب بعض: `Beam.exe` + `Beam.bat` + `VERSION`.
-2. دبل كليك على `Beam.bat` (أو على `Beam.exe` مباشرة) — يشغّل السيرفر ويفتح المتصفح تلقائياً على البورت الثابت **2004**.
-3. أول تشغيل هوتسبوت قد يطلب صلاحية المسؤول — وافق مرة واحدة.
-4. ملفاتك في `Downloads\Beam` داخل مجلد المستخدم.
+1. Put these files next to each other: `Beam.exe` + `Beam.bat` + `VERSION`.
+2. Double-click `Beam.bat` (or `Beam.exe` directly) — the server will start and automatically open the browser on port **2004**.
+3. The first run on a hotspot network may ask for administrator permission — approve it once.
+4. Your files are in `Downloads\Beam` inside the user folder.
 
-## التشغيل على ماك (بدون تثبيت أي حاجة)
-1. انسخ بجانب بعض: `Beam` (نسخة darwin من `dist/`) + `Beam.command` + `VERSION`.
-2. أول مرة: كليك يمين على `Beam.command` ← Open (تجاوز Gatekeeper مرة واحدة)، ثم دبل كليك بعدها — المتصفح يفتح تلقائياً.
-3. ماك يعمل **وضع LAN فقط** (الهوتسبوت لينكس/ويندوز) — ادخل على نفس الواي فاي وافتح رابط الدخول (`http://<ip>:2004`).
-4. ملفاتك في `~/Downloads/Beam`.
+### Mac (no install)
 
-## المنصات المدعومة (static، بلا اعتماديات)
-| النظام | المعمارية | الباينري | التشغيل |
-|---|---|---|---|
-| لينكس | amd64/arm64 | `dist/linux/<arch>/<ver>/Beam` | `Beam.sh` / الأيقونة |
-| ويندوز | amd64/arm64 | `dist/windows/<arch>/<ver>/Beam.exe` | `Beam.bat` |
-| ماك | amd64/arm64 | `dist/darwin/<arch>/<ver>/Beam` | `Beam.command` (LAN فقط) |
+1. Put these files next to each other: `Beam` (Mac build from the `dist/` folder) + `Beam.command` + `VERSION`.
+2. First time: right-click `Beam.command` and choose **Open** to bypass the security check once, then double-click it from then on.
+3. Mac runs in **local-network mode only** — join the same Wi-Fi and open the login link.
+4. Your files are in `~/Downloads/Beam`.
 
-## التثبيت كحزم (ديبيان/فيدورا/Arch/AppImage/Flatpak)
-- **الأسرع للمشاركة — حزم محمولة جاهزة**: `dist/portables/<ver>/` — ست حزم (ويندوز/ماك/لينكس × amd64/arm64)، كل حزمة فيها الباينري + المشغّل + الأيقونة + تعليمات عربي. انسخ الحزمة المناسبة لأي جهاز ودبل كليك — بدون تثبيت.
-- **ديبيان/أوبونتو**: `dist/debian/beam-fileshare_*_amd64.deb` — تثبيت بأيقونة وقائمة (`beam` في التيرمينال)، والملفات في `~/Downloads/Beam` لكل مستخدم.
-- **فيدورا**: من `packaging/fedora/` (spec + تاربول) بـ `rpmbuild` — الخطوات في `packaging/README.md`.
-- **Arch**: من `packaging/arch/` (`PKGBUILD`) بـ `makepkg -si` — حدّث رابط المصدر أولًا.
-- **AppImage** (كل التوزيعات): `dist/appimage/Beam-*-x86_64.AppImage` — يحتاج FUSE2 للتشغيل (أوبونتو 22.04+: `sudo apt install libfuse2`).
-- **Flatpak/Flathub**: ملفات `packaging/flatpak/` جاهزة (`flatpak-builder` + ثبّت الهوية أولًا — التفاصيل في `packaging/README.md`).
-- البناء الكلي: `./build-all.sh` (باينريات) ثم `./packaging/build-packages.sh` (حزم) — أو `./publish.sh` (الكل: 9 خطوات بتقرير جدولي + فهرس `dist/MANIFEST.json`).
+---
 
-## لو الأيقونة لا تعمل (استكشاف)
-1. نفّذ `./install.sh` داخل مجلد البرنامج (يصلح المسارات بعد النقل) ثم كليك يمين على `Beam.desktop` ← **Allow Launching** (مرة واحدة).
-2. البديل: دبل كليك على `Beam` نفسه (يفتح المتصفح تلقائياً) أو `./Beam.sh` واختيار **Run**.
-3. للتأكد من التوافق، نفذ في التيرمينال داخل المجلد:
-   ```bash
-   ./Beam --help
-   ```
-   - طبع الأوامر = الملف سليم (باينري static — يعمل على أي توزيعة حديثة بدون مكتبات).
-   - `Permission denied` = نفذ `chmod +x Beam Beam.sh`.
+## Access from mobile or any device (browser only — no apps)
 
-## التشغيل من السورس (للمطورين — يحتاج Go مرة واحدة فقط)
+1. Join the same Wi-Fi network (or the `Beam` network in hotspot mode).
+2. Open the browser at the address printed by the program, for example: `http://192.168.1.5:2004`
+3. You land directly on the page: **everyone can upload, download, and delete** — no accounts or passwords.
+4. **On mobile:** from the browser menu choose **Add to Home Screen** — the Beam icon will be installed and open fullscreen like an app (illustrated guide inside the Help section on the page).
+5. The **network status** card shows the Wi-Fi QR + link QR + copy button + share-folder path + auto-shutdown counter.
+6. Settings, network, and log are behind the ⚙️ button at the top — **from the host device only**, no remote control.
+
+> **Native Android app (optional):** the `mobile/` folder runs the server on the phone itself. See `mobile/SETUP.md` for instructions, then build the app with `./mobile/build-apk.sh`.
+
+---
+
+## Folders and files
+
+- The **Upload folder** button: always compressed in your browser first, then uploaded as one fast file, and extracted on the server after completion.
+- The view is a **collapsible tree** with **instant search** that filters locally without waiting.
+- Each folder has a **compressed download** button and a **delete** button (with double confirmation), and single files are deleted individually.
+- A folder that exceeds the maximum limit is not shown — it appears as a direct-download row with the reason stated.
+
+## Large files (up to 20 GB by default)
+
+- Uploads **start immediately in small parallel chunks with a checksum per chunk** — no waiting.
+- If the connection drops, re-select the same file and only the missing part resumes — and damaged chunks are retried alone, not the whole file.
+- A **speed and time-remaining** counter shows during upload and download.
+- The **resumable upload sessions** panel shows what stopped, with a resume button.
+- The list **updates automatically** every few seconds — there is no refresh button.
+- Two transfer modes: **reliable** (default — for unstable networks) and **turbo** (for maximum speed on stable networks).
+
+## Network modes
+
+| Mode | Description |
+|---|---|
+| **Wi-Fi (LAN)** | Default — works on the existing network |
+| **Hotspot** | Private network with a name and password of your choice (8+ characters) |
+| **Open network** | Linux only + clear warning (Windows requires a password from the OS itself) |
+
+> The only file security is the Wi-Fi password — choose your network carefully.
+
+---
+
+## Appearance and language
+
+- Clean light theme by default with **a toggle at the top for dark mode** — your choice is saved in your browser.
+- **Arabic / English:** language button at the top for everyone, and the device owner sets the default visitor language from Settings.
+- Embedded Arabic font works **without internet**, and QR codes are always black-on-white to guarantee scanning in any theme.
+
+## Supported platforms
+
+| System | Architecture | Launch |
+|---|---|---|
+| Linux | amd64 / arm64 | `Beam.sh` or the icon |
+| Windows | amd64 / arm64 | `Beam.bat` |
+| Mac | amd64 / arm64 | `Beam.command` (local network only) |
+
+## Installing as system packages (optional)
+
+- **Ready-made portable packages:** `dist/portables/` — copy the right package to any machine and double-click, no install.
+- **Debian / Ubuntu:** `.deb` file from `dist/debian/` — adds an icon and the `beam` command.
+- **Fedora / Arch / AppImage / Flatpak:** see `packaging/README.md` and `PACKAGING_NOTES.md`.
+- Full build: `./build-all.sh` then `./packaging/build-packages.sh` — or `./publish.sh` for everything in one go.
+
+---
+
+## For developers (needs Go once)
+
 ```bash
-go -C goserver run ./cmd/beam                                   # وضع LAN — يفتح المتصفح تلقائياً
-go -C goserver run ./cmd/beam --hotspot --password 12345678     # شبكة خاصة (Admin/sudo أول مرة)
-go -C goserver run ./cmd/beam --no-browser --idle-timeout 30m   # بدون متصفح + إغلاق بعد 30 دقيقة خمول
-go -C goserver test ./...                              # كل الاختبارات
+go -C goserver run ./cmd/beam                                   # local-network mode
+go -C goserver run ./cmd/beam --hotspot --password 12345678     # private network
+go -C goserver run ./cmd/beam --no-browser --idle-timeout 30m   # no browser + shut down after 30 minutes idle
+go -C goserver test ./...                                       # all tests
 ```
 
-## الدخول من الأجهزة (موبايل/كمبيوتر — متصفح فقط)
-1. ادخل على شبكة الشركة (أو شبكة `Beam` في وضع Hotspot) — باسورد الواي فاي هو الأمان الوحيد للملفات.
-2. افتح المتصفح على العنوان اللي يطبعه البرنامج، مثال: `http://192.168.1.5:2004`
-3. هتدخل مباشرة على الصفحة: الرفع والتنزيل — الكل يقدر يرفع وينزّل ويمسح.
-4. **على الموبايل**: من قائمة المتصفح (أندرويد) أو مشاركة ← إضافة للشاشة الرئيسية (آيفون) — تثبت أيقونة Beam وتفتح بملء الشاشة كتطبيق. لمساعدة التثبيت راجع كارت "كيف أثبت Beam على موبايلي؟" في قسم المساعدة بالصفحة.
-5. **تطبيق أندرويد أصلي (سيرفر على الهاتف + رفع في الخلفية)**: مجلد `mobile/` — التطبيق يشغّل سيرفر Beam على الموبايل نفسه (بلا كتابة روابط): زر تشغيل/إيقاف + QR الرابط + زر فتح المتصفح + شريط عنوان يقبل `b` أو `beam:2004`. اكتب في أي متصفح على الشبكة `http://beam.local:2004` (وعلى ويندوز `http://beam:2004`). البناء في `mobile/SETUP-ar.md`، ثم `./mobile/build-apk.sh` — الناتج `dist/mobile/Beam-<ver>-android.apk` للتثبيت المباشر (بلا متاجر).
-4. كارت **حالة الشبكة** يعرض QR الواي فاي + QR الرابط + زر نسخ + مسار مجلد المشاركة + عدّاد الإغلاق التلقائي.
-5. التحكم في الشبكة والإعدادات والسجل ومسحه من زر ⚙️ في الهيدر (نافذة إعدادات بتبويبات) — من **جهاز التشغيل فقط**، لا كود ولا دخول عن بعد.
-6. قائمة **الأجهزة المتصلة الآن** تتحدث لحظياً (كل 3 ثوانٍ) في صفحة المالك.
+## Project contents
 
-## الهوية: Beam — ورقي بهدوء عالمي
-- ثيم فاتح ورقي افتراضي (حبر + شارة دولية) مع **مفتاح في الهيدر** للوضع الداكن — اختيارك محفوظ في المتصفح.
-- عربي/إنجليزي: زر اللغة في الهيدر للجميع (اختيار محلي)، والمالك يحدد اللغة الافتراضية للزوار الجدد من تبويب "عام" في الإعدادات — الاتجاه والخط يتبدلان تلقائياً.
-- خط Cairo مضمن يعمل أوفلاين، وشعار SVG مرسوم (بدون إيموجي).
-- QR أسود على أبيض دائماً لضمان المسح في أي ثيم.
-- الاسم الموحد في كل مكان: **Beam** — الأيقونة (`icon.png`) + ملف سطح المكتب + الباينري + الصفحة.
+| Path | Description |
+|---|---|
+| `goserver/` | Go server code + web page in `goserver/web/index.html` |
+| `mobile/` | Android app (server on the phone) |
+| `packaging/` | Package build scripts for all systems |
+| `docs/` | Project documentation / constitution |
+| `Beam.sh` / `Beam.bat` / `Beam.command` | Double-click launchers |
+| `install.sh` / `build-all.sh` / `publish.sh` | Install, build, and publish |
 
-## الملفات الكبيرة (حتى 20GB افتراضياً)
-- الرفع **يبدأ فوراً بقطع 2MB متوازية (×3) مع بصمة لكل قطعة**: لا انتظار.
-  لو الاتصال فصل، أعد اختيار نفس الملف (حتى من متصفح آخر) وسيكمل الناقص فقط —
-  والقطع التالفة تُعاد وحدها لا الملف كله.
-- عداد **السرعة والوقت المتبقي** يظهر أثناء الرفع والتنزيل السريع (زر ⚡ بجانب كل ملف:
-  تنزيل متوازي + إيقاف/استئناف + تحقق من البصمة + حفظ تلقائي).
-- لوحة **جلسات الرفع القابلة للاستكمال** تعرض التقدم العالق بزر استكمال.
-- القائمة **تتحدث تلقائياً** كل 5 ثواني (مفيش زر تحديث).
-- الحد الافتراضي 20GB (يُغيَّر للجلسة من الإعدادات).
+> Note: there is no `config.json` and no `logs/` folder — settings are for the session only (+ a copy in the owner's browser), and the log is in memory only (last 500 lines).
 
-## أوضاع الشبكة (من قسم الإدارة في المتصفح، أو سطر الأوامر)
-- **واي فاي (LAN)**: الافتراضي — يشتغل على الشبكة الموجودة.
-- **هوتسبوت**: باسم وباسورد من اختيارك (8+ حروف).
-- **شبكة مفتوحة بدون باسورد**: لينكس فقط + تحذير واضح (أي جهاز قريب يدخل). ويندوز يشترط باسورد من النظام نفسه.
+---
 
-## إعادة البناء (على جهاز البناء فقط — يحتاج Go 1.21+ مرة واحدة، بدون تحميل مكتبات)
-```bash
-./build.sh     # مصفوفة كاملة: dist/<os>/<arch>/version/ + versions.json + SHA256SUMS
-build.bat      # ويندوز: dist\windows\amd64\<version>\Beam.exe (الكاملة عبر ./build-all.sh على لينكس)
-```
+## Troubleshooting
 
-## النشر بضغطة واحدة 🚀
-أيقونة **نشر Beam** على الديسكتوب (تُنشأ بـ `./install.sh`): فحص الكود + الاختبارات + بناء + إيقاف القديم + تركيب الجديد + تشغيل + تحقق حي — وتُظهر رابط الدخول في النهاية. عند أي فشل تتوقف قبل المساس بالشغال، ولو الجديد لم يعمل **ترجع تلقائياً** للنسخة السابقة. (تنبيه: الضغطة تفصل المتصلين لحظات؛ أي رفع جارٍ يُستكمل تلقائياً بعد عودة السيرفر.)
-
-## الملفات
-- `goserver/` — سورس Go كاملاً (سيرفر + هوتسبوت + إدارة + اختبارات + رسائل عربي/إنجليزي) + الواجهة في `goserver/web/index.html` (صفحة واحدة عربي/إنجليزي).
-- `Beam` / `Beam.exe` — الباينري لكل نظام (يُبنى بـ `./build.sh`، لا يُرفع).
-- `Beam.sh` / `Beam.bat` / `Beam.command` — مشغّل الدبل كليك (يشغّل السيرفر لو واقف؛ السيرفر يفتح المتصفح بنفسه).
-- `Beam.desktop` — أيقونة سطح المكتب (تُولَّد بـ `./install.sh`، لا تُرفع).
-- لا `config.json` ولا `logs/` — الإعدادات للجلسة فقط (+ نسخة localStorage في متصفح المالك)، والسجل حلقة ذاكرة (آخر 500 سطر).
-- `docs/` — دستور المشروع.
+- **Icon does not work:** run `./install.sh` inside the folder, then right-click the icon → **Allow Launching**, or click `Beam` directly.
+- **Verify the file is intact:** run `./Beam --help` — if it prints the commands, the file is fine. If you see `Permission denied`, run `chmod +x Beam Beam.sh`.
+- **One-click publish:** the **Publish Beam** desktop icon (created by `./install.sh`) checks, builds, and runs automatically, and rolls back to the previous version if the new one fails.

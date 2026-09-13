@@ -1,49 +1,49 @@
-# Beam — التغليف والتوزيع (packaging/)
+# Beam — Packaging and Distribution (packaging/)
 
-> الباينري static واحد لكل منصة (`./build-all.sh`)، وهنا يُغلَّف حسب كل نظام.
-> Beam لا يكتب أي ملفات جانبية (لا config ولا logs): الإعدادات للجلسة فقط
-> (+ نسخة في localStorage بالمتصفح)، والسجل في الذاكرة، والملفات في
-> `~/Downloads/Beam` — أي حزمة قابلة لإعادة التثبيت دون مساس بملفات المستخدم.
+> One static binary per platform (`./build-all.sh`), wrapped here per OS.
+> Beam writes no sidecar files (no config and no logs): settings are for the session only
+> (+ a copy in browser localStorage), log in memory, and files in
+> `~/Downloads/Beam` — any package can be reinstalled without touching user files.
 
-## الخريطة
+## Map
 
-| الهدف | الملفات هنا | البناء | الحالة |
+| Target | Files here | Build | Status |
 |---|---|---|---|
-| Debian/Ubuntu `.deb` | `debian/build-deb.sh` + `common/` + `icons/` | `./packaging/debian/build-deb.sh amd64` | ✅ يُبنى ويُفحص (lintian) هنا |
-| AppImage | `appimage/build-appimage.sh` | يحتاج `mksquashfs` (Debian: `sudo apt install squashfs-tools`) | ✅ x86_64 مُختبر تشغيلًا، aarch64 مبني فقط |
-| Fedora `.rpm` | `fedora/build-rpm.sh` (spec + تاربول نظيف) | `./packaging/fedora/build-rpm.sh` (يحتاج `rpmbuild`: فيدورا `rpm-build` / ديبيان `rpm`) → `dist/rpm/` | ✅ يُبنى هنا ويُفحص (`rpm -qlp`) |
-| Arch | `arch/PKGBUILD` + `arch/.SRCINFO` | على Arch: `updpkgsums && makepkg -si` | ملفات جاهزة، البناء على Arch |
-| Flatpak/Flathub | `flatpak/com.beam.beam.{yaml,desktop,metainfo.xml,beam-wrapper.sh}` | يحتاج `flatpak-builder` (غير مثبت هنا) | manifest + metainfo متحقق منها |
-| macOS | `Beam.command` (الجذر) + باينري darwin من `dist/` | zip جاهز | موثق في README (وضع LAN) |
+| Debian/Ubuntu `.deb` | `debian/build-deb.sh` + `common/` + `icons/` | `./packaging/debian/build-deb.sh amd64` | ✅ builds and is checked (lintian) here |
+| AppImage | `appimage/build-appimage.sh` | needs `mksquashfs` (Debian: `sudo apt install squashfs-tools`) | ✅ x86_64 tested by running, aarch64 built only |
+| Fedora `.rpm` | `fedora/build-rpm.sh` (spec + clean tarball) | `./packaging/fedora/build-rpm.sh` (needs `rpmbuild`: Fedora `rpm-build` / Debian `rpm`) → `dist/rpm/` | ✅ builds here and is checked (`rpm -qlp`) |
+| Arch | `arch/PKGBUILD` + `arch/.SRCINFO` | on Arch: `updpkgsums && makepkg -si` | files ready, build on Arch |
+| Flatpak/Flathub | `flatpak/com.beam.beam.{yaml,desktop,metainfo.xml,beam-wrapper.sh}` | needs `flatpak-builder` (not installed here) | manifest + metainfo validated |
+| macOS | `Beam.command` (root) + darwin binary from `dist/` | zip ready | documented in README (LAN mode) |
 
-## البناء الكلي
+## Full build
 ```bash
-./build-all.sh                  # الباينريات الست + versions.json
-./packaging/build-portables.sh  # حزم ZIP المحمولة الست في dist/portables/<ver>/
-./packaging/build-packages.sh   # deb (amd64/arm64) + appimage (إن وُجد mksquashfs)
-python3 packaging/manifest.py $(cat VERSION)  # فهرس dist/MANIFEST.json + SHA256SUMS
-./publish.sh                    # الكل: 9 خطوات (قدرات + أيقونات + بناء + حزم + فهرس + لانشرات + تركيب + تحقق + تقرير)
+./build-all.sh                  # six binaries + versions.json
+./packaging/build-portables.sh  # six portable ZIPs in dist/portables/<ver>/
+./packaging/build-packages.sh   # deb (amd64/arm64) + appimage (if mksquashfs exists)
+python3 packaging/manifest.py $(cat VERSION)  # dist/MANIFEST.json + SHA256SUMS index
+./publish.sh                    # everything: 9 steps (capabilities + icons + build + packages + index + launchers + install + verify + report)
 ```
 
-## ملاحظات تقنية صادقة
-1. **FUSE**: تشغيل AppImage يحتاج FUSE2 على جهاز المستخدم (أوبونتو 22.04+ بلا
-   FUSE2 افتراضيًا) — البديل الموثق للمستخدم: `sudo apt install libfuse2`
-   أو فك الحزمة يدويًا. البناء نفسه لا يحتاج FUSE (runtime + mksquashfs).
-2. **الهوية قبل أي نشر عام (TODO)**: `beam-fileshare@localhost` مؤقت في
-   (deb control/changelog) و`TODO` في (spec/PKGBUILD/metainfo/app-id) —
-   ضع اسمك وبريدك وموقع المشروع وملف LICENSE قبل: Debian mentors / COPR /
-   AUR / Flathub. ملاحظة: **app-id الخاص بـ Flathub لا يتغير بعد أول قبول**.
-3. **Arch**: حدّث `source=` لرابط التاربول الحقيقي + `updpkgsums` ثم
-   `makepkg --printsrcinfo > .SRCINFO` قبل الرفع على AUR.
-4. **Flathub checklist**: ثبّت الهوية + LICENSE + حوّل مصدر الـ manifest إلى
-   git tag + أضف screenshots بروابط + ابنِ بـ flatpak-builder + جرّب التشغيل
-   (`flatpak-builder --run ... beam`) + اقرأ `flatpak-builder-lint`.
-5. **Fedora/COPR**: ابنِ التاربول هنا (`make-tarball.sh`)، انسخه مع الـ spec
-   لجهاز فيدورا، `rpmbuild -bb`، ثم ارفع SRPM إلى COPR.
-6. المجلدات الفارغة تُفقد داخل zip المجلدات (limitation موثقة) — لا علاقة لها بالحزم.
-7. `packaging/tools/` (appimagetool/runtime) أدوات بناء محلية غير مُcommitted
-   منطقيًا — أضفها لـ `.gitignore` لو بدأت git (المجلد غير git حاليًا).
+## Honest technical notes
+1. **FUSE**: running AppImage needs FUSE2 on the user machine (Ubuntu 22.04+ has no
+    FUSE2 by default) — documented alternative for the user: `sudo apt install libfuse2`
+    or extract the package manually. The build itself needs no FUSE (runtime + mksquashfs).
+2. **Identity before any public release (TODO)**: temporary `beam-fileshare@localhost` in
+    (deb control/changelog) and `TODO` in (spec/PKGBUILD/metainfo/app-id) —
+    put your name, email, project site, and LICENSE file before: Debian mentors / COPR /
+    AUR / Flathub. Note: **Flathub app-id cannot change after first acceptance**.
+3. **Arch**: update `source=` to the real tarball URL + `updpkgsums` then
+    `makepkg --printsrcinfo > .SRCINFO` before uploading to AUR.
+4. **Flathub checklist**: set identity + LICENSE + switch manifest source to
+    git tag + add screenshots with links + build with flatpak-builder + try running
+    (`flatpak-builder --run ... beam`) + read `flatpak-builder-lint`.
+5. **Fedora/COPR**: build the tarball here (`make-tarball.sh`), copy it with the spec
+    to a Fedora machine, `rpmbuild -bb`, then upload the SRPM to COPR.
+6. Empty folders are lost inside folder zips (documented limitation) — unrelated to packages.
+7. `packaging/tools/` (appimagetool/runtime) are local build tools not committed
+    logically — add them to `.gitignore` if you start git (folder is not git currently).
 
-## مجلدات الإخراج (dist/)
-- `dist/debian/*.deb`, `dist/appimage/*.AppImage` — من `build-packages.sh`.
-- `dist/<os>/<arch>/<ver>/` + `versions.json` + `SHA256SUMS` — من `build-all.sh`.
+## Output folders (dist/)
+- `dist/debian/*.deb`, `dist/appimage/*.AppImage` — from `build-packages.sh`.
+- `dist/<os>/<arch>/<ver>/` + `versions.json` + `SHA256SUMS` — from `build-all.sh`.
