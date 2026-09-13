@@ -1,0 +1,144 @@
+# Beam — full release build on version tags (e.g. v1.6.0 must match VERSION).
+# Takes over the *build* half of publish.sh: binaries + portables + system
+# packages + Android APK, all attached to a GitHub Release. Installing on
+# your own machine (publish.sh step 10) stays local: download + ./install.sh.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Tag must match VERSION file
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          VER="$(tr -d ' \t\r\n' < VERSION)"
+          test "$TAG" = "v$VER" || { echo "Tag $TAG does not match VERSION $VER"; exit 1; }
+          echo "Building Beam v$VER"
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: goserver/go.sum
+
+      # build scripts force GOPROXY=off, so pre-fill the module cache first.
+      - name: Download Go modules
+        run: go -C goserver mod download
+
+      - name: Vet + tests
+        run: |
+          go -C goserver vet ./...
+          go -C goserver test -count=1 ./...
+
+      - name: Install packaging tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq squashfs-tools rpm file
+          pip3 install --quiet pillow
+
+      - name: Fetch AppImage runtimes (gitignored locally)
+        run: |
+          mkdir -p packaging/tools
+          curl -sSL -o packaging/tools/runtime-x86_64 https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64
+          curl -sSL -o packaging/tools/runtime-aarch64 https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-aarch64
+          ls -la packaging/tools/
+
+      - name: Regenerate icons
+        run: python3 packaging/render-icons.py
+
+      - name: Build all platforms
+        run: ./build-all.sh
+
+      - name: Portable bundles
+        run: ./packaging/build-portables.sh
+
+      - name: System packages (deb / AppImage / rpm)
+        run: ./packaging/build-packages.sh all
+
+      - name: Manifest + checksums
+        run: python3 packaging/manifest.py "$(cat VERSION)"
+
+      - name: Upload desktop artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop
+          path: |
+            dist/portables/
+            dist/debian/
+            dist/appimage/
+            dist/rpm/
+            dist/SHA256SUMS
+            dist/versions.json
+            dist/MANIFEST.json
+          if-no-files-found: error
+
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: goserver/go.sum
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up Android SDK + NDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK packages
+        run: |
+          sdkmanager --licenses > /dev/null <<<'y
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" "ndk;26.3.11579264"
+
+      - name: Download Go modules
+        run: go -C goserver mod download
+
+      - name: Build APK
+        run: ./mobile/build-apk.sh
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: dist/mobile/*.apk
+          if-no-files-found: error
+
+  release:
+    needs: [build, android]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-files
+          merge-multiple: true
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-files/**/*
+          generate_release_notes: true

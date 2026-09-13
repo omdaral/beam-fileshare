@@ -1,0 +1,32 @@
+# Beam — continuous check on every push to main.
+# Fast gate: vet + tests + full 6-platform cross-compile (no artifacts kept).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: goserver/go.sum
+
+      # build-all.sh forces GOPROXY=off, so pre-fill the module cache first.
+      - name: Download Go modules
+        run: go -C goserver mod download
+
+      - name: Vet + tests
+        run: |
+          go -C goserver vet ./...
+          go -C goserver test -count=1 ./...
+
+      - name: Cross-compile all platforms
+        run: ./build-all.sh
