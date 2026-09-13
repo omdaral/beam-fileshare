@@ -117,6 +117,17 @@ jobs:
       - name: Download Go modules
         run: go -C goserver mod download
 
+      # build-apk.sh installs gomobile itself but runs `gomobile init`
+      # silently with GOPROXY=off, which hides network failures and breaks
+      # `gomobile bind`. Do both steps here verbosely so failures are loud.
+      - name: Install + init gomobile
+        run: |
+          export PATH="$HOME/go/bin:$HOME/gopath/bin:$PATH"
+          GOPROXY="https://proxy.golang.org,direct" GOTOOLCHAIN=auto go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20231127183840-76ac6878050a
+          NDK_DIR="$(ls -d "$ANDROID_HOME"/ndk/* | sort -V | tail -1)"
+          echo "NDK: $NDK_DIR"
+          GOPROXY="https://proxy.golang.org,direct" gomobile init -ndk "$NDK_DIR"
+
       - name: Build APK
         run: ./mobile/build-apk.sh
 
