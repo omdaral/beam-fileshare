@@ -1,0 +1,36 @@
+# Maintainer: Beam Project (TODO: real identity before AUR publish)
+# beam-fileshare: direct file sharing between devices over a private network
+# Build on Arch: updpkgsums && makepkg -si  (then test: beam --help; beam)
+# AUR submit steps: packaging/README.md
+pkgname=beam-fileshare
+pkgver=1.6.0
+pkgrel=1
+pkgdesc="Direct file sharing between devices over a private network (offline web UI)"
+arch=('x86_64' 'aarch64')
+url="TODO: project homepage"
+license=('custom:TODO-add-upstream-LICENSE')
+depends=('curl' 'xdg-utils')
+optdepends=('libnotify: desktop notifications')
+# TODO(packaging): point to the real release tarball and fill sha256sums via updpkgsums
+source=("https://github.com/USER/beam/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+  cd "$pkgname-$pkgver"
+  export CGO_ENABLED=0 GOPROXY=off
+  go -C goserver vet ./...
+  go -C goserver test -count=1 ./...
+  go -C goserver build -trimpath -ldflags="-s -w -X fileshare.AppVersion=$pkgver" -o Beam-linux ./cmd/beam
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  install -Dm755 Beam-linux "$pkgdir/usr/libexec/beam/Beam"
+  install -Dm755 packaging/common/beam-wrapper.sh "$pkgdir/usr/bin/beam"
+  install -Dm644 packaging/common/beam.1 "$pkgdir/usr/share/man/man1/beam.1"
+  install -Dm644 packaging/fedora/beam-fileshare.desktop "$pkgdir/usr/share/applications/beam-fileshare.desktop"
+  for s in 16 22 24 32 48 64 128 256; do
+    install -Dm644 "packaging/icons/beam_${s}.png" \
+      "$pkgdir/usr/share/icons/hicolor/${s}x${s}/apps/beam.png"
+  done
+}

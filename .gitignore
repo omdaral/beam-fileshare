@@ -1,0 +1,48 @@
+# Go build outputs (built locally, not committed)
+dist/
+packaging/tools/
+Beam
+Beam.exe
+Beam-linux-amd64
+Beam-go
+Beam.prev
+.Beam.new
+# Legacy pre-v1.6 names (never commit these either)
+FileShare
+FileShare.exe
+FileShare-linux-amd64
+FileShare-go
+FileShare.prev
+.FileShare.new
+Publish.desktop
+Beam.desktop
+FileShare.desktop
+*.log
+
+# Beam writes NO side files at runtime (no config.json, no logs/):
+# settings are session-only (+browser localStorage), the log is in-memory,
+# and shares live in the user's ~/Downloads/Beam. So ignore any legacy
+# residue that old versions may have created next to the binary.
+config.json
+logs/
+Shared/
+Beam-Shared/
+
+# Beam mobile wrapper (generated at build time — source lives in mobile/src,
+# mobile/*.json, mobile/*.sh, mobile/scripts; everything else is regenerable)
+mobile/android/
+mobile/node_modules/
+mobile/www/
+mobile/beam.aar
+mobile/beam-sources.jar
+mobile/dist/
+dist/mobile/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo

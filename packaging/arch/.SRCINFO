@@ -1,0 +1,16 @@
+# Generated for AUR submission (regenerate with: makepkg --printsrcinfo > .SRCINFO)
+pkgbase = beam-fileshare
+	pkgdesc = Direct file sharing between devices over a private network (offline web UI)
+	pkgver = 1.5.0
+	pkgrel = 1
+	url = TODO: project homepage
+	arch = x86_64
+	arch = aarch64
+	license = custom:TODO-add-upstream-LICENSE
+	optdepends = libnotify: desktop notifications
+	depends = curl
+	depends = xdg-utils
+	source = https://github.com/USER/beam/archive/v1.5.0.tar.gz
+	sha256sums = SKIP
+
+pkgname = beam-fileshare

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- TODO(packaging): finalize the app-id BEFORE first Flathub submission
+     (it is immutable afterwards; ideally io.github.<your-account>.Beam).
+     TODO: add upstream LICENSE and set project_license + homepage url. -->
+<component type="desktop-application">
+  <id>com.beam.beam</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>TODO: add upstream LICENSE</project_license>
+  <name>Beam</name>
+  <summary>Direct file sharing between devices over a private network</summary>
+  <summary xml:lang="ar">مشاركة مباشرة للملفات بين الأجهزة عبر شبكة خاصة</summary>
+  <description>
+    <p>Beam shares files between phones and computers on the same
+    network with no internet and no accounts. One static server with an
+    offline Arabic/English web UI; guests join via link or QR.</p>
+    <p xml:lang="ar">يشارك Beam الملفات بين الموبايلات والكمبيوترات على
+    نفس الشبكة بدون إنترنت وبدون حسابات، بواجهة عربي/إنجليزي تعمل
+    أوفلاين، والدخول بالرابط أو رمز QR.</p>
+  </description>
+  <launchable type="desktop-id">com.beam.beam.desktop</launchable>
+  <content_rating type="oars-1.1">
+    <content_attribute id="violence-cartoon">none</content_attribute>
+    <content_attribute id="violence-fantasy">none</content_attribute>
+    <content_attribute id="violence-realistic">none</content_attribute>
+    <content_attribute id="violence-bloodshed">none</content_attribute>
+    <content_attribute id="violence-sexual">none</content_attribute>
+    <content_attribute id="drugs-alcohol">none</content_attribute>
+    <content_attribute id="drugs-narcotics">none</content_attribute>
+    <content_attribute id="drugs-tobacco">none</content_attribute>
+    <content_attribute id="sex-nudity">none</content_attribute>
+    <content_attribute id="sex-themes">none</content_attribute>
+    <content_attribute id="language-profanity">none</content_attribute>
+    <content_attribute id="language-humor">none</content_attribute>
+    <content_attribute id="language-discrimination">none</content_attribute>
+    <content_attribute id="social-chat">none</content_attribute>
+    <content_attribute id="social-info">none</content_attribute>
+    <content_attribute id="social-audio">none</content_attribute>
+    <content_attribute id="social-location">none</content_attribute>
+    <content_attribute id="social-contacts">none</content_attribute>
+    <content_attribute id="money-purchasing">none</content_attribute>
+    <content_attribute id="money-gambling">none</content_attribute>
+  </content_rating>
+  <releases>
+    <release version="1.5.0" date="2026-09-13"/>
+  </releases>
+</component>

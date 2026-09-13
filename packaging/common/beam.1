@@ -1,0 +1,33 @@
+.TH BEAM 1 "2026" "Beam" "User Commands"
+.SH NAME
+beam \- direct file sharing between devices over a private network
+.SH SYNOPSIS
+.B beam
+[\fI\-\-port PORT\fR] [\fI\-\-no\-browser\fR] [\fI\-\-idle\-timeout DUR\fR]
+.SH DESCRIPTION
+Beam shares files between phones and computers on the same Wi-Fi network,
+with no internet and no accounts. Beam keeps no side files: settings apply
+to the running session (the owner's browser keeps a copy in localStorage),
+the access log lives in memory, and shared files live in
+\fI~/Downloads/Beam\fR.
+If the server is down it is started and the page opens in the browser.
+The join link/QR inside the page is shared with guest devices.
+.SH OPTIONS
+.TP
+\fB\-\-port PORT\fR
+Server port (fixed default 2004: http://<ip>:2004).
+.TP
+\fB\-\-no\-browser\fR
+Do not open the browser.
+.TP
+\fB\-\-idle\-timeout DUR\fR
+Auto shutdown after this long without activity (default 5h, 0 disables).
+.SH FILES
+.TP
+\fI/usr/libexec/beam/Beam\fR
+Static server binary (run via \fBbeam\fR).
+.TP
+\fI~/Downloads/Beam/\fR
+The one well-known share folder.
+.SH "SEE ALSO"
+Project README (docs/ folder of the source tree).

@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Beam
+Name[en]=Beam
+Comment=Share files between your devices over a private network - offline
+Comment[ar]=مشاركة الملفات بين أجهزتك عبر شبكة خاصة - بدون إنترنت
+Exec=beam
+Icon=com.beam.beam
+Terminal=false
+StartupNotify=true
+Categories=Network;FileTransfer;
+Keywords=share;files;hotspot;beam;
+StartupWMClass=beam

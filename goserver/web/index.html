@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M10 36 L28 8' stroke='%23191714' stroke-width='5.5' stroke-linecap='round' fill='none'/%3E%3Cpath d='M22 38 L36 16' stroke='%23191714' stroke-width='5.5' stroke-linecap='round' opacity='.45' fill='none'/%3E%3Ccircle cx='37' cy='37' r='5' fill='%23D9481F'/%3E%3C/svg%3E">
+<script>try{var _bt=localStorage.getItem("beam-theme");if(_bt!=="dark")_bt="light";document.documentElement.setAttribute("data-theme",_bt);}catch(e){}</script>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#F7F5F0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Beam">
+<link rel="apple-touch-icon" href="/vendor/apple-touch-icon.png">
+<title>Beam</title>
+<script>try{var _bl=localStorage.getItem("beam-lang");if(_bl!=="en")_bl="ar";document.documentElement.setAttribute("lang",_bl);document.documentElement.setAttribute("dir",_bl==="en"?"ltr":"rtl");}catch(e){}</script>
+<link rel="stylesheet" href="/app/style.css">
+
+</head>
+<body>
+<header><svg class="logo-svg" viewBox="0 0 48 48" aria-hidden="true"><path d="M10 36 L28 8" stroke="currentColor" stroke-width="5.5" stroke-linecap="round"/><path d="M22 38 L36 16" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" opacity=".45"/><circle cx="37" cy="37" r="5" fill="currentColor"/></svg><div class="wordmark">Beam<small data-i18n="tagline">مشاركة مباشرة • بدون إنترنت</small></div><button id="navToggle" class="hbtn" type="button" aria-label="القائمة" aria-expanded="false" aria-controls="mainNav">☰</button><nav class="nav-links" id="mainNav"><a href="#join" data-i18n="nav_join">الدخول</a><a href="#share" data-i18n="nav_share">المشاركة</a><a href="#filesSec" data-i18n="nav_files">الملفات</a><a href="#help" data-i18n="nav_help">مساعدة</a></nav><div class="spacer"></div><button id="srvStopTop" class="hbtn hidden" type="button" data-i18n-aria="srv_stop" aria-label="إيقاف السيرفر"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></button><button id="settingsBtn" class="hbtn hidden" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span data-i18n="settings">الإعدادات</span></button><button id="langBtn" class="hbtn" type="button">EN</button><button id="themeBtn" class="hbtn" type="button"></button></header>
+<main>
+<section id="join" class="section hero-section">
+<div class="container hero-grid">
+<div class="hero-copy">
+<span class="hero-badge"><span class="dot"></span><span data-i18n="hero_badge">مباشر الآن • بدون إنترنت</span><b id="heroVer">Beam</b></span>
+<h1 data-i18n="hero_h1">شارك ملفاتك مع أي جهاز حولك</h1>
+<p class="hero-sub" data-i18n="hero_hint">شارك هذا الرابط أو امسح QR الواي فاي بالأسفل من أي موبايل على الشبكة</p>
+<div class="hero-url" id="heroUrl">…</div>
+<div class="hero-cta"><button id="heroCopyBtn" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span data-i18n="hero_copy">نسخ الرابط للأجهزة</span></button><a class="btn btn-ghost" href="#share"><span data-i18n="hero_how">ازاي تدخل؟</span></a></div>
+<div class="hero-stats">
+<div class="stat"><span class="stat-v" id="statSsid">…</span><span class="stat-k" data-i18n="net_ssid">اسم الشبكة (SSID)</span></div>
+<div class="stat"><span class="stat-v" id="statClients">…</span><span class="stat-k" data-i18n="net_clients">الأجهزة المتصلة</span></div>
+<div class="stat"><span class="stat-v" id="statMode">…</span><span class="stat-k" data-i18n="net_mode">الوضع</span></div>
+</div>
+</div>
+<div class="hero-visual" aria-hidden="true"><svg class="hero-rings" viewBox="0 0 200 200"><circle cx="100" cy="100" r="88" fill="none" stroke="#fff" stroke-width="2" opacity=".35"/><circle cx="100" cy="100" r="64" fill="none" stroke="#fff" stroke-width="2" opacity=".5"/><circle cx="100" cy="100" r="40" fill="rgba(255,255,255,.16)" stroke="#fff" stroke-width="2"/><path d="M78 118 L110 66" stroke="#fff" stroke-width="9" stroke-linecap="round"/><path d="M102 122 L128 82" stroke="#fff" stroke-width="9" stroke-linecap="round" opacity=".55"/><circle cx="132" cy="130" r="9" fill="#fff"/></svg></div>
+</div>
+</section>
+
+<section class="section steps-section"><div class="container steps-grid">
+<div class="step"><span class="step-n">1</span><div><h3 data-i18n="step1_t">اتصل بالشبكة</h3><p data-i18n="step1_d">ادخل على واي فاي أو شبكة الجهاز من موبايلك</p></div></div>
+<div class="step"><span class="step-n">2</span><div><h3 data-i18n="step2_t">افتح الرابط أو امسح QR</h3><p data-i18n="step2_d">انسخ رابط الدخول أو امسح رمز الواي فاي بالكاميرا</p></div></div>
+<div class="step"><span class="step-n">3</span><div><h3 data-i18n="step3_t">ارفع ونزّل بحرية</h3><p data-i18n="step3_d">الكل يقدر يرفع وينزّل ويمسح — بدون حسابات</p></div></div>
+</div></section>
+
+<section id="share" class="section net-section">
+<div class="container">
+<div class="sec-head"><span class="kicker" data-i18n="share_kicker">الدخول</span><h2 data-i18n="share_title">ادخل من أي جهاز</h2><p data-i18n="share_sub">امسح الرمز أو انسخ الرابط — أي جهاز على نفس الشبكة</p></div>
+<div class="net-grid">
+<div id="netCard" class="panel">
+<h2><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="19.5" r="1" fill="currentColor"/></svg><span data-i18n="net_title">حالة الشبكة</span></h2>
+<div class="kv"><span class="k" data-i18n="net_ssid">اسم الشبكة (SSID)</span><span class="v" id="netSsid">…</span></div>
+<div class="kv"><span class="k" data-i18n="net_addr">عنوان الدخول</span><span class="v" id="netAddr">…</span></div>
+<div class="kv"><span class="k" data-i18n="net_clients">الأجهزة المتصلة</span><span class="v" id="netClients">…</span></div>
+<div class="kv"><span class="k" data-i18n="net_mode">الوضع</span><span class="v" id="netMode">…</span></div>
+<div class="kv"><span class="k" data-i18n="share_dir">مجلد المشاركة</span><span class="v" id="netShared" dir="ltr" style="font-size:12px">…</span></div>
+<div class="kv"><span class="k" data-i18n="pretty_addr">عنوان سهل</span><span class="v" id="netPretty" dir="ltr" style="font-size:12px">…</span></div>
+<p class="small" id="idleNote" style="margin:8px 0 0"></p>
+<div class="row">
+<button class="btn-outline" id="copyBtn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span data-i18n="copy_link">نسخ رابط الدخول</span></button>
+</div>
+</div>
+<div class="panel qr-panel">
+<div class="seg">
+<button id="qrWifiBtn" class="active"><span data-i18n="qr_wifi">QR الواي فاي</span></button>
+<button id="qrUrlBtn"><span data-i18n="qr_url">QR الرابط</span></button>
+</div>
+<div class="qrbox">
+<canvas id="qrCanvas" width="360" height="360" role="img" data-i18n-aria="qr_aria" aria-label="رمز QR للدخول"></canvas>
+<div id="qrFallback"><p data-i18n="qr_fallback_p">تعذر رسم رمز QR على هذا المتصفح. استخدم الرابط التالي مباشرة:</p><a id="qrLink" href="#">…</a><p class="small" id="qrText"></p><div class="row"><button class="btn-blue" id="copyBtn2"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span data-i18n="copy_link2">نسخ الرابط</span></button></div></div>
+<p class="small" data-i18n="qr_hint">امسح الرمز بكاميرا الموبايل للدخول بسرعة. يتحدث تلقائيا كل 10 ثوانٍ.</p>
+</div>
+<div id="netMsg" class="msg"></div>
+</div>
+</div>
+</div>
+</section>
+
+<div id="ownerZone" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+<div class="modal-dialog" id="adminCard">
+<div class="modal-head"><div><h2 id="settingsTitle"><span data-i18n="settings_title">إعدادات الجهاز</span><span class="sub" data-i18n="settings_sub">تظهر لصاحب الجهاز فقط — أي تغيير من غيره مرفوض</span></h2></div><div class="spacer"></div><button id="settingsClose" class="modal-x" type="button" data-i18n-aria="close" aria-label="إغلاق">×</button></div>
+<div class="tabs" role="tablist">
+<button type="button" data-tab="tabNet" class="active" role="tab"><span data-i18n="tab_net">الشبكة</span></button>
+<button type="button" data-tab="tabGeneral" role="tab"><span data-i18n="tab_general">عام</span></button>
+<button type="button" data-tab="tabDevices" role="tab"><span data-i18n="tab_devices">الأجهزة والسجل</span></button>
+<button type="button" data-tab="tabDevice" role="tab"><span data-i18n="tab_device">الجهاز</span></button>
+</div>
+<div class="tab-panel active" id="tabNet" role="tabpanel">
+<div class="seg">
+<button id="modeLan" class="active"><span data-i18n="mode_lan">واي فاي (LAN)</span></button>
+<button id="modeHotspot"><span data-i18n="mode_hotspot">هوتسبوت من الجهاز</span></button>
+</div>
+<p class="small" id="lanNote" data-i18n="lan_note">متصل بواي فاي الحالية — لا حقول مطلوبة.</p>
+<div id="hotspotForm" style="display:none">
+<label class="f" for="admSsid" data-i18n="ssid_l">اسم الشبكة (SSID)</label>
+<input type="text" id="admSsid" value="Beam" maxlength="32" dir="ltr" style="text-align:left">
+<label class="f" for="admPass" data-i18n="pass_l">باسورد الشبكة (8+ حروف للهوتسبوت)</label>
+<input type="password" id="admPass" maxlength="63" autocomplete="off" dir="ltr" style="text-align:left">
+<div class="row"><button class="btn-gray" id="showPassBtn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span data-i18n="show_pass">إظهار الباسورد</span></button></div>
+<div class="row"><button class="btn-gray" id="openCheckBtn" aria-pressed="false"><span data-i18n="open_off">☐ شبكة مفتوحة بدون باسورد (لينكس فقط)</span></button></div>
+</div>
+<div class="row">
+<button class="btn-green" id="netStartBtn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg><span data-i18n="net_start">تشغيل الشبكة</span></button>
+<button class="btn-red" id="netStopBtn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1"/></svg><span data-i18n="net_stop">إيقاف الهوتسبوت</span></button>
+</div>
+<div class="row" id="phoneHsRow" style="display:none"><button class="btn-blue" id="phoneHsBtn"><span data-i18n="hs_phone">هوتسبوت من هذا الهاتف</span></button></div>
+<div id="phoneHsMsg" class="msg"></div>
+<div id="admMsg" class="msg"></div>
+<div class="kv"><span class="k" data-i18n="caps">قدرة الهوتسبوت</span><span class="v" id="admCaps">…</span></div>
+</div>
+<div class="tab-panel" id="tabDevices" role="tabpanel">
+<h2 style="margin-top:0"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span><span data-i18n="dev_title">الأجهزة المتصلة الآن</span> (<span id="devCount">0</span>)</span></h2>
+<div id="devList"><p class="small">…</p></div>
+<p class="small" id="devTs"></p>
+<div class="row"><button class="btn-gray" id="devRefreshBtn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span data-i18n="dev_refresh">تحديث الأجهزة</span></button></div>
+<h2 style="margin-top:14px"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span data-i18n="log_title">السجل</span></h2>
+<pre class="log" id="logView">…</pre>
+<div class="row"><button class="btn-gray" id="logRefreshBtn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span data-i18n="log_refresh">تحديث السجل</span></button><button class="btn-red" id="logClearBtn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg><span data-i18n="log_clear">مسح السجل</span></button></div>
+<div id="logMsg" class="msg"></div>
+</div>
+<div class="tab-panel" id="tabGeneral" role="tabpanel">
+<p class="small" data-i18n="default_lang_note">تطبق اللغة على الزوار الجدد فور حفظها. لغتك الحالية تتغير فوراً من القائمة.</p>
+<h2 style="margin-top:0"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg><span data-i18n="cfg_title">الإعدادات</span></h2>
+<label class="f" for="cfgPort" data-i18n="port_l">البورت</label>
+<input type="number" id="cfgPort" min="1" max="65535" step="1" dir="ltr" style="text-align:left">
+<label class="f" for="cfgLang" data-i18n="lang_l">اللغة / Language</label>
+<select id="cfgLang" dir="ltr" style="text-align:left">
+<option value="ar">العربية</option>
+<option value="en">English</option>
+</select>
+<div id="cfgMsg" class="msg"></div>
+<p class="small" data-i18n="cfg_local_note">تُحفظ الإعدادات تلقائياً عند التعديل (للجلسة الحالية فقط — بدون أي ملفات على الجهاز)، وتُحفظ نسخة في هذا المتصفح لإعادة تعبئتها تلقائياً.</p>
+</div>
+<div class="tab-panel" id="tabDevice" role="tabpanel">
+<div class="row"><button class="btn-red" id="srvStopBtn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg><span data-i18n="srv_stop">إيقاف السيرفر</span></button></div>
+<p class="small" data-i18n="stop_note">إيقاف السيرفر متاح من جهاز التشغيل فقط. أي جهاز على الشبكة يقدر يرفع وينزّل — الأمان هو باسورد الواي فاي.</p>
+</div>
+</div>
+</div>
+
+<section id="filesSec" class="section files-section">
+<div class="container">
+<div class="sec-head"><span class="kicker" data-i18n="files_kicker">المشاركة</span><h2 data-i18n="files_title">الملفات</h2><p data-i18n="files_sub">اسحب وارفع، وحمّل بسرعة — والقائمة تتحدث تلقائياً</p></div>
+<div id="main">
+<div class="card">
+<div class="topbar"><h2><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span data-i18n="files_up">ارفع ملفات</span></h2></div>
+<div id="drop" tabindex="0" role="button" data-i18n-aria="drop_aria" aria-label="منطقة رفع الملفات">
+<span data-i18n="drop_main">اسحب الملفات هنا أو دوس للاختيار</span><br><small data-i18n="drop_sub">تقدر تختار أكتر من ملف — الكل يقدر يرفع وينزّل ويمسح</small>
+</div>
+<input id="picker" type="file" multiple class="hidden">
+<div class="row"><button class="btn-gray" id="folderBtn" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span data-i18n="folder_up">ارفع مجلدًا كاملًا</span></button></div>
+<input id="folderPicker" type="file" class="hidden" webkitdirectory mozdirectory directory multiple>
+<div class="seg" id="upModeSeg"><button id="modeRelUp" class="active"><span data-i18n="mode_reliable">موثوق</span></button><button id="modeTurboUp"><span data-i18n="mode_turbo">تيربو</span></button></div>
+<p class="small" data-i18n="mode_up_note">الموثوق: استكمال وبصمة لكل قطعة — للشبكات غير المستقرة. التيربو: قطع أكبر ومسارات أكثر وتحقق نهائي واحد — لأقصى سرعة.</p>
+<p class="small" data-i18n="folder_note">المجلد يترفع بمحتوياته وشكله — ولو كبير جدًا يظهر كـ zip مباشرة مع السبب</p>
+<div id="upList"></div>
+</div>
+
+<div class="card">
+<h2><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span data-i18n="files_down">الملفات المتاحة للتنزيل</span></h2>
+<input id="fileSearch" type="search" data-i18n-ph="search_ph" placeholder="ابحث في الملفات والمجلدات..." autocomplete="off">
+<div class="seg" id="dlModeSeg"><button id="modeRelDl" class="active"><span data-i18n="mode_reliable">موثوق</span></button><button id="modeTurboDl"><span data-i18n="mode_turbo">تيربو</span></button></div>
+<p class="small" data-i18n="mode_dl_note">زر ⚡ يستخدم الوضع المحدد: الموثوق يحفظ التقدم وقابل للاستكمال، والتيربو أسرع بلا حفظ.</p>
+<div id="msg" class="msg"></div>
+<div id="files"><p data-i18n="loading">جاري التحميل...</p></div>
+</div>
+
+<div class="card">
+<h2><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span data-i18n="sess_title">جلسات الرفع القابلة للاستكمال</span></h2>
+<div id="sessMsg" class="msg"></div>
+<div id="sessions"><p data-i18n="loading2">جاري التحميل...</p></div>
+<p class="small" data-i18n="sess_hint">رفع انقطع؟ اختر الملف نفسه من الأعلى وسيكمل تلقائياً — أو دوس استكمال هنا ثم اختر الملف.</p>
+</div>
+</div>
+
+</div>
+</section>
+
+<section id="help" class="section help-section">
+<div class="container">
+<div class="sec-head"><span class="kicker" data-i18n="help_kicker">مساعدة</span><h2 data-i18n="help_title">أسئلة سريعة</h2><p data-i18n="help_sub">كل ما تحتاجه للدخول والمشاركة</p></div>
+<div class="help-grid">
+<div class="help-card"><h3 data-i18n="help1_t">ما هي شبكة الدخول؟</h3><p data-i18n="help1_d">ادخل على واي فاي من موبايلك، أو على شبكة الهوتسبوت التي يشغلها صاحب الجهاز — ثم افتح رابط الدخول بالأعلى.</p></div>
+<div class="help-card"><h3 data-i18n="help2_t">كيف أمسح رمز QR؟</h3><p data-i18n="help2_d">افتح كاميرا الموبايل ووجهها لرمز الواي فاي في قسم المشاركة — سيدخل الشبكة والرابط مباشرة.</p></div>
+<div class="help-card"><h3 data-i18n="help3_t">هل ملفاتي آمنة؟</h3><p data-i18n="help3_d">الأمان هو باسورد الواي فاي نفسه: أي جهاز على الشبكة يقدر يرفع وينزّل، ولا دخول من خارج الشبكة.</p></div>
+<div class="help-card"><h3 data-i18n="help4_t">كيف أثبت Beam على موبايلي؟</h3><p data-i18n="help4_d">أندرويد: قائمة المتصفح ← تثبيت/إضافة للشاشة الرئيسية. آيفون: مشاركة ← إضافة للشاشة الرئيسية. ستفتح كتطبيق بملء الشاشة.</p></div>
+</div>
+</div>
+</section>
+</main>
+<footer data-i18n="footer">متصل بشبكة الشركة - بدون إنترنت</footer>
+<noscript><div class="wrap"><div class="card"><p data-i18n="noscript">الصفحة تحتاج تشغيل الجافاسكربت. فعل الجافاسكربت في المتصفح ثم حدث الصفحة.</p></div></div></noscript>
+
+<script src="/vendor/qrcode.js"></script>
+<script src="/app/config.js"></script>
+<script src="/app/i18n.js"></script>
+<script src="/app/api.js"></script>
+<script src="/app/ui.js"></script>
+<script src="/app/files.js"></script>
+<script src="/app/upload.js"></script>
+<script src="/app/upload_queue.js"></script>
+<script src="/app/upload_zip.js"></script>
+<script src="/app/download.js"></script>
+<script src="/app/net.js"></script>
+<script src="/app/app.js"></script>
+
+</body>
+</html>

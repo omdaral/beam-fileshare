@@ -1,0 +1,44 @@
+# Beam Flatpak manifest (Flathub-ready pending TODOs in packaging/README.md:
+# finalize app-id, upstream LICENSE, git-tag sources, screenshots).
+# Local build (needs flatpak-builder, NOT installed here):
+#   flatpak-builder --force-clean build-dir packaging/flatpak/com.beam.beam.yaml
+#   flatpak-builder --run build-dir packaging/flatpak/com.beam.beam.yaml beam
+# LAN mode inside the sandbox (hotspot tools are sandboxed away — the app
+# degrades gracefully). No side files: shares live in ~/Downloads/Beam.
+app-id: com.beam.beam
+runtime: org.freedesktop.Platform
+runtime-version: '23.08'
+sdk: org.freedesktop.Sdk
+command: beam
+finish-args:
+  - --share=network # serve LAN + reach guests
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --talk-name=org.freedesktop.Notifications # notify-send on publish/join
+  - --talk-name=org.freedesktop.portal.OpenURI # open the page in host browser
+  - --filesystem=xdg-download/Beam # the one well-known share folder
+modules:
+  - name: beam
+    buildsystem: simple
+    build-options:
+      env:
+        CGO_ENABLED: '0'
+        GOPROXY: 'off'
+        GOCACHE: /run/build/beam/gocache
+    sources:
+      # TODO(flathub): switch to git tag source on submission, e.g.
+      # - type: git
+      #   url: https://github.com/USER/beam.git
+      #   tag: v1.6.0
+      - type: dir
+        path: ../..
+    build-commands:
+      - go -C goserver vet ./...
+      - go -C goserver test -count=1 ./...
+      - go -C goserver build -trimpath -ldflags="-s -w -X fileshare.AppVersion=1.6.0" -o Beam-flatpak ./cmd/beam
+      - install -Dm755 Beam-flatpak /app/bin/Beam
+      - install -Dm755 packaging/flatpak/beam-wrapper.sh /app/bin/beam
+      - install -Dm644 packaging/flatpak/com.beam.beam.desktop /app/share/applications/com.beam.beam.desktop
+      - install -Dm644 packaging/flatpak/com.beam.beam.metainfo.xml /app/share/metainfo/com.beam.beam.metainfo.xml
+      - for s in 16 22 24 32 48 64 128 256; do install -Dm644 packaging/icons/beam_${s}.png /app/share/icons/hicolor/${s}x${s}/apps/com.beam.beam.png; done

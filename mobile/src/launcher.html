@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#F7F5F0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" type="image/png" href="./icon.png">
+<title>Beam</title>
+<style>
+:root{--bg0:#F7F5F0;--card:#fff;--ink:#191714;--muted:#6E675C;--line:#E4DED2;--acc:#D9481F;--acc-ink:#fff;--ok:#1E7B44;--danger:#B3261E}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg0);color:var(--ink);font-family:"Segoe UI",Tahoma,Arial,sans-serif;line-height:1.7}
+.wrap{max-width:480px;margin:0 auto;padding:28px 20px 40px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo svg{width:46px;height:46px}
+h1{margin:0;font-size:26px;letter-spacing:.12em}
+.sub{color:var(--muted);margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin:12px 0;text-align:center}
+.status{font-weight:900;font-size:18px;margin:4px 0}
+.status.on{color:var(--ok)}
+.status.off{color:var(--muted)}
+.addr{font-family:monospace;direction:ltr;font-size:20px;font-weight:700;margin:6px 0}
+canvas#qr{width:220px;height:220px;max-width:100%;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px}
+button{min-height:54px;border-radius:12px;font-size:18px;font-weight:900;cursor:pointer;padding:12px 18px;width:100%;margin-top:10px;font-family:inherit}
+.btn-acc{background:var(--acc);color:var(--acc-ink);border:1px solid transparent}
+.btn-line{background:transparent;color:var(--acc);border:1px solid var(--acc)}
+.btn-gray{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn-stop{background:transparent;color:var(--danger);border:1px solid var(--danger)}
+.addrbar{display:flex;gap:8px;margin-top:10px}
+.addrbar input{flex:1;min-height:54px;border:1px solid var(--line);border-radius:12px;font-size:17px;padding:10px 12px;direction:ltr;text-align:left;font-family:monospace}
+.addrbar button{width:auto;margin-top:0;white-space:nowrap}
+#msg{margin-top:10px;font-weight:700;display:none}
+#msg.ok{display:block;color:var(--ok)}
+#msg.err{display:block;color:var(--danger)}
+.small{font-size:13px;color:var(--muted)}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="logo">
+<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="1" y="1" width="46" height="46" rx="11" fill="#F7F5F0"/><path d="M10 36 L28 8" stroke="#191714" stroke-width="5.5" stroke-linecap="round" fill="none"/><path d="M22 38 L36 16" stroke="#191714" stroke-width="5.5" stroke-linecap="round" opacity=".45" fill="none"/><circle cx="37" cy="37" r="5" fill="#D9481F"/></svg>
+<div><h1>Beam</h1><p class="sub">سيرفر المشاركة على هذا الهاتف</p></div>
+</div>
+
+<div class="card">
+<div class="status off" id="status">متوقف</div>
+<div class="addr" id="prettyAddr" style="font-size:17px">beam.local:2004 • beam:2004</div>
+<div class="small">beam.local للجميع • beam لويندوز • والـ IP احتياطي دائم</div>
+<div class="small" id="ipAddr" dir="ltr"></div>
+<canvas id="qr" width="360" height="360"></canvas>
+<div id="msg"></div>
+</div>
+
+<div class="card">
+<button class="btn-acc" id="startBtn">▶ تشغيل السيرفر</button>
+<button class="btn-stop hidden" id="stopBtn">⏻ إيقاف السيرفر</button>
+<button class="btn-line" id="openBtn">فتح واجهة المتصفح</button>
+</div>
+
+<div class="card">
+<div class="addrbar">
+<input id="addrInput" placeholder="b أو beam أو beam:2004" autocomplete="off">
+<button class="btn-gray" id="goBtn">انتقال</button>
+</div>
+<p class="small">اكتب b أو beam:2004 للفتح مباشرة.</p>
+</div>
+</div>
+<script src="./qrcode.js"></script>
+<script>
+"use strict";
+function $(id){return document.getElementById(id);}
+var PORT=2004, LOCAL="http://127.0.0.1:"+PORT, timer=null, running=false;
+function show(t,ok){var m=$("msg");m.textContent=t;m.className=ok?"ok":"err";}
+function plugin(name){try{if(window.Capacitor&&Capacitor.registerPlugin)return Capacitor.registerPlugin(name);}catch(e){return null;}}
+function beamSrv(){try{if(window.Capacitor&&Capacitor.getPlatform()==="android")return plugin("BeamServer");}catch(e){}return null;}
+function fgStart(){
+  // Keep the process (and its Go server) alive with screen off.
+  try{
+    if(!(window.Capacitor&&Capacitor.getPlatform()==="android"))return;
+    var s=plugin("ForegroundService");
+    if(!s)return;
+    var p=s.startForegroundService({title:"Beam يعمل",body:"سيرفر المشاركة يعمل في الخلفية"});
+    if(p&&p.catch)p.catch(function(){});
+  }catch(e){}
+}
+function fgStop(){
+  try{
+    if(!(window.Capacitor&&Capacitor.getPlatform()==="android"))return;
+    var s=plugin("ForegroundService");
+    if(!s)return;
+    var p=s.stopForegroundService();
+    if(p&&p.catch)p.catch(function(){});
+  }catch(e){}
+}
+
+/* ---------- الحالة والـ QR ---------- */
+function paint(){
+  var st=$("status");
+  st.textContent=running?"يعمل الآن":"متوقف";
+  st.className="status "+(running?"on":"off");
+  $("startBtn").classList.toggle("hidden",running);
+  $("stopBtn").classList.toggle("hidden",!running);
+}
+async function probe(url){
+  var c=new AbortController(),to=setTimeout(function(){c.abort();},1500);
+  try{
+    var r=await fetch(url+"/health",{signal:c.signal,cache:"no-store"});
+    if(!r.ok)return null;
+    var j=await r.json();
+    return (j&&j.ok)?url:null;
+  }catch(e){return null;}
+  finally{clearTimeout(to);}
+}
+async function refreshStatus(){
+  var ok=await probe(LOCAL);
+  running=!!ok;
+  paint();
+  if(running)drawQR();
+  return running;
+}
+function joinURL(){
+  // Prefer the real LAN IP when known (mDNS can fail on some routers);
+  // fall back to the pretty beam.local name.
+  try{
+    var ip=($("ipAddr").textContent||"").trim().split(":")[0];
+    if(/^\d+\.\d+\.\d+\.\d+$/.test(ip))return "http://"+ip+":"+PORT;
+  }catch(e){}
+  return "http://beam.local:"+PORT;
+}
+function drawQR(){
+  var url=joinURL();
+  try{
+    var qr=qrcode(0,"L");
+    qr.addData(url);
+    qr.make();
+    var n=qr.getModuleCount(),quiet=4,scale=8;
+    var canvas=$("qr");
+    canvas.width=(n+quiet*2)*scale;canvas.height=(n+quiet*2)*scale;
+    var ctx=canvas.getContext("2d");
+    ctx.fillStyle="#ffffff";ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle="#000000";
+    for(var y=0;y<n;y++)for(var x=0;x<n;x++)if(qr.isDark(y,x))ctx.fillRect((x+quiet)*scale,(y+quiet)*scale,scale,scale);
+  }catch(e){
+    // minimal fallback: show the URL text if QR lib missing
+    var c=$("qr").getContext("2d");
+    c.fillStyle="#fff";c.fillRect(0,0,360,360);
+    c.fillStyle="#191714";c.font="20px monospace";c.textAlign="center";
+    c.fillText(url,180,180);
+  }
+  // direct-IP fallback line under the pretty address
+  fetch(LOCAL+"/api/status").then(function(r){return r.json();}).then(function(j){
+    $("ipAddr").textContent=(j&&j.url)?String(j.url).replace(/^.*:\/\//,""):"";
+  }).catch(function(){});
+}
+function poll(){
+  if(timer)clearInterval(timer);
+  timer=setInterval(refreshStatus,5000);
+}
+
+/* ---------- تشغيل / إيقاف ---------- */
+$("startBtn").onclick=async function(){
+  var srv=beamSrv();
+  show("جارٍ التشغيل…",true);
+  if(srv){
+    try{await srv.start({});fgStart();}catch(e){show("تعذر التشغيل",false);return;}
+  }
+  for(var i=0;i<20;i++){
+    if(await probe(LOCAL)){show("",true);paint();drawQR();poll();return;}
+    await new Promise(function(r){setTimeout(r,500);});
+  }
+  show("تعذر تشغيل السيرفر",false);
+};
+$("stopBtn").onclick=async function(){
+  var srv=beamSrv();
+  try{
+    if(srv){await srv.stop({});}
+    else{await fetch(LOCAL+"/api/server/stop",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});}
+  }catch(e){}
+  fgStop();
+  running=false;paint();
+  show("توقف السيرفر",true);
+  if(timer)clearInterval(timer);
+};
+
+/* ---------- فتح المتصفح ---------- */
+$("openBtn").onclick=async function(){
+  var url=joinURL();
+  var opened=false;
+  try{
+    if(window.Capacitor){
+      var Browser=null;
+      try{Browser=Capacitor.registerPlugin("Browser");}catch(e){}
+      if(Browser&&Browser.open){await Browser.open({url:url});opened=true;}
+    }
+  }catch(e){}
+  if(!opened)location.href=url;
+};
+
+/* ---------- شريط العنوان المصغر: b / beam / beam:2004 ---------- */
+function resolveAddr(t){
+  t=String(t||"").trim().toLowerCase().replace(/^https?:\/\//,"").replace(/\/+$/,"");
+  if(t===""||t==="b"||t==="beam"||t==="beam:2004"||t==="b:2004")return LOCAL;
+  if(/^\d+$/.test(t))return "http://127.0.0.1:"+t;
+  if(t.indexOf(":")<0&&/^[a-z0-9.-]+$/i.test(t)&&t.indexOf(".")<0)return "http://"+t+".local:"+PORT;
+  if(t.indexOf("://")<0)t="http://"+t;
+  // Guard: external hosts need explicit confirm (avoid open-redirect traps).
+  try{
+    var u=new URL(t),h=u.hostname;
+    var lan=/^(\d+\.\d+\.\d+\.\d+|localhost|.*\.local|beam|b)$/.test(h)||/^10\.|^192\.168\.|^172\.(1[6-9]|2\d|3[01])\./.test(h);
+    if(!lan&&!window.confirm("فتح عنوان خارجي؟\n"+h))return LOCAL;
+  }catch(e){}
+  return t;
+}
+$("goBtn").onclick=function(){location.href=resolveAddr($("addrInput").value);};
+$("addrInput").addEventListener("keydown",function(e){if(e.key==="Enter")location.href=resolveAddr($("addrInput").value);});
+
+/* ---------- بدء ---------- */
+(async function init(){
+  // Not inside the app (desktop preview)? behave as a status page.
+  var srv=beamSrv();
+  if(!srv){await refreshStatus();poll();return;}
+  if(await refreshStatus()){fgStart();wakeLockOn();}
+  poll();
+})();
+var _wl=null;
+function wakeLockOn(){
+  try{
+    if("wakeLock" in navigator&&navigator.wakeLock.request){
+      navigator.wakeLock.request("screen").then(function(l){_wl=l;}).catch(function(){});
+    }
+  }catch(e){}
+}
+document.addEventListener("visibilitychange",function(){
+  if(!document.hidden&&running)wakeLockOn();
+});
+</script>
+</body>
+</html>
