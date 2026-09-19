@@ -149,7 +149,10 @@ sha256sum -c <(sed 's|/tmp/big500.bin|/tmp/big500_dl.bin|' /tmp/big.sha) && echo
 - [ ] From the browser: re-select the same file after a page refresh mid-upload → resumes (automatic find) and does not start from zero
 - [ ] From another browser/device: select the same file → existing progress is adopted (resume with a new identity)
 - [ ] Did the speed and remaining-time counter show during upload? Yes / No — Measured speed: ____
-- [ ] ⚡ fast button in download: progress + speed + pause/resume + fingerprint check? Yes / No
+- [ ] Single download button per file (reliable/turbo switch controls it): progress + speed + pause/resume + fingerprint check? Yes / No — Huge file (>800MB) falls back to direct download automatically? Yes / No
+- [ ] Folder zip button: preflight error (missing/empty/over-limit folder) shows readable text and starts no download? Yes / No — Healthy folder downloads as `Name.zip` and opens? Yes / No
+- [ ] Folder zip STORE (default): `GET /download_zip?dir=Docs&method=store` returns exact `Content-Length` == body length, opens as a valid zip, includes empty subdirs, entries use STORE? Yes / No — `method=deflate` is 400 zip_store_only (ZIP-only)? Yes / No — `method=bogus` is a clean 400? Yes / No
+- [ ] Upload-extract staging: upload a `.zip` with `extract:true` → tree lands without overwriting same names (`Name (1)`…), source zip removed on success / kept on corrupt zip, no `.extract-*` leftovers? Yes / No
 - [ ] Does the log line include duration and speed? (Log from the web page — Devices & Log tab — example literal: `file (123b, 1.2s, 3.4 م.ب/ث)`)
 - [ ] Result: ✅ / ❌ — Upload time: ____ — Download time: ____
 
@@ -202,6 +205,24 @@ curl -s $BASE/health
 
 ---
 
+## 7) Android background survival (no split-screen needed)
+> Success metric: the on-phone server keeps answering /health with the app fully
+> backgrounded, on any Android/OEM. Regression test for "server dies unless split-screen".
+- [ ] Fresh install → open Beam → tap "▶ تشغيل السيرفر" → a system dialog asks for
+>   background permission → allow → التشخيص card shows "خدمة الخلفية: تعمل ✅"
+>   and "إعفاء البطارية: مُعفى ✅", and a persistent "Beam يعمل" notice is visible
+- [ ] Press Home (app fully hidden, NO split-screen) → from a second device,
+>   `curl http://PHONE_IP:2004/health` every 30s for 5 minutes → always `{"ok":true}`
+- [ ] Lock the screen for 5 minutes → unlock → status still "يعمل الآن", no restart needed
+- [ ] Start a 200MB upload from another device → minimize Beam mid-upload → completes, byte-identical
+- [ ] Force-stop the app (Settings → Force stop) → reopen Beam → server auto-resumes
+>   ("جارٍ الاستئناف…") with no tap, notice returns
+- [ ] Deny path: on a test device deny the battery dialog → status area shows the
+>   warning "اسمح بتشغيل Beam في الخلفية" and التشخيص shows "إعفاء البطارية: مقيّد ⛔"
+- [ ] Result: ✅ / ❌ — Device + Android version: ____ — Notes: ____
+
+---
+
 ## Final sign-off table
 | Item | ✅/❌ | Notes |
 |---|---|---|
@@ -210,6 +231,7 @@ curl -s $BASE/health
 | 3) 100MB round-trip |  |  |
 | 4) Drop during upload |  |  |
 | 5) Stop/start ×5 |  |  |
+| 7) Android background |  |  |
 | 6) 8 devices |  |  |
 
 Tester: ____ — Date: ____ — Version (`VERSION`): ____ — OS: ____

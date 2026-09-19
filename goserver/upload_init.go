@@ -58,6 +58,9 @@ func parseInitParams(data map[string]interface{}) (*initParams, string) {
 		return nil, "up_bad_piece_len"
 	}
 	p.needN = int((p.size + p.pieceLen - 1) / p.pieceLen)
+	if p.needN > maxSessionPieces {
+		return nil, "up_too_big"
+	}
 	raw, ok := data["hashes"]
 	if !ok {
 		return p, ""
@@ -100,6 +103,12 @@ func newSessionMeta(uid string, p *initParams) *sessionMeta {
 // resumeV2 merges newly offered hashes into a live v2 session.
 // Returns (responded, conflict): conflict rebuilds the session from scratch.
 func resumeV2(uid string, m *sessionMeta, p *initParams) (conflict bool) {
+	// PieceLen is part of the resume identity: re-init with a different
+	// piece size must rebuild, never silently reuse the old PieceLen
+	// with a resized bitmap.
+	if m.PieceLen != 0 && m.PieceLen != p.pieceLen {
+		return true
+	}
 	stored := m.Hashes
 	if len(stored) != p.needN {
 		stored = make([]*string, p.needN)
@@ -146,7 +155,8 @@ func handleUploadInit(w http.ResponseWriter, r *http.Request) {
 	}
 	SweepUploads()
 
-	if m := loadMeta(p.uid); m != nil && m.Name == p.name && m.Size == p.size && m.NoVerify == p.noVerify {
+	if m := loadMeta(p.uid); m != nil && m.Name == p.name && m.Size == p.size &&
+		m.NoVerify == p.noVerify && (m.V != 2 || !p.wantV2 || m.PieceLen == p.pieceLen) {
 		if p.extract && !m.Extract {
 			m.Extract = true
 			saveMeta(p.uid, m)

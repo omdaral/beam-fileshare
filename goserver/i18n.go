@@ -22,8 +22,8 @@ var msgTable = map[string][2]string{
 	"net_already":         {"الشبكة متوقفة بالفعل — السيرفر شغال على LAN.", "Network already stopped — server runs on LAN."},
 	"port_not_number":     {"البورت لازم يكون رقماً — مثال: 2004", "Port must be a number — e.g. 2004"},
 	"port_range":          {"البورت لازم بين 1 و 65535 — مثال: 2004", "Port must be 1–65535 — e.g. 2004"},
-	"max_not_number":      {"الحد لازم يكون رقماً بالميجا — مثال: 20480", "Limit must be a number in MB — e.g. 20480"},
-	"max_range":           {"الحد لازم بين 1 و 102400 ميجا.", "Limit must be 1–102400 MB."},
+	"max_not_number":      {"الحد لازم يكون رقماً بالميجا — مثال: 20480 (0 = بلا حد)", "Limit must be a number in MB — e.g. 20480 (0 = unlimited)"},
+	"max_range":           {"الحد لازم بين 0 و 102400 ميجا (0 = بلا حد).", "Limit must be 0–102400 MB (0 = unlimited)."},
 	"config_save_fail":    {"تعذر حفظ الإعدادات.", "Could not save settings."},
 	"lang_bad":            {"اللغة غير صالحة (ar أو en).", "Invalid language (ar or en)."},
 	"config_saved":        {"اتحفظت الإعدادات.", "Settings saved."},
@@ -105,8 +105,24 @@ var msgTable = map[string][2]string{
 	"up_multipart_boundary": {"طلب غير صالح (لا توجد حدود multipart)", "Invalid request (no multipart boundary)"},
 	"up_multipart_bad":      {"طلب غير صالح", "Invalid request"},
 	"up_multipart_empty":    {"لم يصل أي ملف", "No file received"},
-	"up_multipart_save":     {"فشل حفظ الملف. حاول تاني.", "Could not save the file. Retry."},
-}
+		"up_multipart_save":     {"فشل حفظ الملف. حاول تاني.", "Could not save the file. Retry."},
+		"up_range_invalid":      {"نطاق التنزيل المطلوب خارج حدود الملف.", "Requested download range is outside the file."},
+		// ---- registry-based sharing ----
+		"share_bad_path":    {"مسار غير صالح.", "Invalid path."},
+		"share_need_abs":    {"المسار لازم يكون مطلقاً (يبدأ بـ /).", "Path must be absolute."},
+		"share_not_found":   {"المسار غير موجود.", "Path not found."},
+		"share_blocked":     {"مشاركة مجلدات النظام محظورة.", "Sharing system folders is blocked."},
+		"share_empty":       {"الملف أو المجلد فارغ.", "File or folder is empty."},
+		"share_not_regular": {"لازم ملف عادي أو مجلد.", "Must be a regular file or folder."},
+		"share_limit":       {"وصلت للحد الأقصى للمشاركات.", "Share limit reached."},
+		"share_too_big":     {"حجم الملف خارج الحد المسموح.", "File exceeds the allowed size."},
+		"share_unavailable": {"الملف غير متاح حالياً (صاحبه غير متصل).", "File is currently unavailable (owner offline)."},
+		"relay_timeout":     {"انتهت المهلة بانتظار صاحب الملف.", "Timed out waiting for the file owner."},
+		"relay_bad_token":   {"رمز الترحيل غير صالح أو منتهي.", "Invalid or expired relay token."},
+		"relay_bad_owner":   {"معرف المالك مطلوب.", "Owner id is required."},
+		"temp_bad_path":     {"مسار المجلد المؤقت غير صالح.", "Invalid temp dir path."},
+		"temp_need_abs":     {"مسار المجلد المؤقت لازم يكون مطلقاً.", "Temp dir path must be absolute."},
+	}
 
 // tr picks the message in the requested language ("en" or anything else = ar).
 func tr(lang, key string, args ...interface{}) string {

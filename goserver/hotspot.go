@@ -2,7 +2,6 @@ package beamcore
 
 import (
 	"runtime"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -48,7 +47,7 @@ func recordHotspot(ssid, password string, port int, openNet bool, lang string) (
 	hsOwnProfile = true
 	hsMu.Unlock()
 	info := map[string]interface{}{"ssid": ssid, "ip": ip, "port": port,
-		"url": "http://" + ip + ":" + strconv.Itoa(port), "security": security}
+		"url": BaseURL(ip, port), "security": security}
 	warn := ""
 	if openNet {
 		warn = tr(lang, "hs_warn_open")

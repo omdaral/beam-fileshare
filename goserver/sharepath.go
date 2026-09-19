@@ -4,7 +4,32 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
+
+// sharedBaseCache memoizes EvalSymlinks(SharedDir): one syscall per process
+// instead of two per file op. Refreshed when SharedDir changes (tests) or
+// when evaluation fails (fallback is never cached).
+var (
+	sharedBaseMu  sync.Mutex
+	sharedBaseFor string
+	sharedBaseVal string
+)
+
+func cachedSharedBase() string {
+	sharedBaseMu.Lock()
+	defer sharedBaseMu.Unlock()
+	if sharedBaseVal != "" && sharedBaseFor == SharedDir {
+		return sharedBaseVal
+	}
+	realBase, err := filepath.EvalSymlinks(SharedDir)
+	if err != nil {
+		return SharedDir
+	}
+	sharedBaseFor = SharedDir
+	sharedBaseVal = realBase
+	return realBase
+}
 
 // sharedFileStat stats one share-relative file WITHOUT following symlinks.
 // Rejects symlinks, non-regular files, and targets escaping SharedDir
@@ -25,10 +50,7 @@ func sharedFileStat(rel string) (os.FileInfo, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	realBase, err := filepath.EvalSymlinks(SharedDir)
-	if err != nil {
-		realBase = SharedDir
-	}
+	realBase := cachedSharedBase()
 	if real != realBase && !strings.HasPrefix(real, realBase+string(os.PathSeparator)) {
 		return nil, "", os.ErrNotExist
 	}
@@ -52,10 +74,7 @@ func sharedDirStat(rel string) (os.FileInfo, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	realBase, err := filepath.EvalSymlinks(SharedDir)
-	if err != nil {
-		realBase = SharedDir
-	}
+	realBase := cachedSharedBase()
 	if real != realBase && !strings.HasPrefix(real, realBase+string(os.PathSeparator)) {
 		return nil, "", os.ErrNotExist
 	}
@@ -69,7 +88,7 @@ func openSharedFile(rel string) (*os.File, os.FileInfo, string, error) {
 	if err != nil {
 		return nil, nil, "", err
 	}
-	f, err := os.Open(fpath)
+	f, err := openSharedNoFollow(fpath)
 	if err != nil {
 		return nil, nil, "", err
 	}

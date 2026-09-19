@@ -13,6 +13,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Shell syntax check (bash -n)
+        run: |
+          git ls-files -z '*.sh' | while IFS= read -r -d '' f; do bash -n "$f" || exit 1; done
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:

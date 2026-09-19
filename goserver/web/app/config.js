@@ -1,7 +1,7 @@
 /* Beam web config — central tunables (values may be refreshed from /api/status limits). */
 "use strict";
 /* Beam CONFIG — حدود مركزية (بدون bundler) */
-var CONFIG={SEARCH_MAX:200, ZIP_MAX_DESKTOP:1*1024*1024*1024, ZIP_MAX_MOBILE:200*1024*1024, DL_FAST_WARN:200*1024*1024, POLL_STATUS:10000, POLL_CLIENTS:5000, POLL_FILES:5000};
+var CONFIG={SEARCH_MAX:200, DL_FAST_WARN:200*1024*1024, POLL_STATUS:10000, POLL_CLIENTS:5000, POLL_FILES:5000};
 function isMobileUI(){try{if(window.matchMedia&&matchMedia("(max-width:640px)").matches)return true;var ua=navigator.userAgent||"";return /Android|iPhone|iPad|Mobile/i.test(ua);}catch(e){return false;}}
 /* applyLimits refreshes CONFIG from /api/status limits (single source:
    the Go backend). Upload/download tunables follow when present.

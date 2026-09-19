@@ -19,39 +19,99 @@ import (
 var httpServer *http.Server
 
 var (
-	stopOnce sync.Once
+	stopMu sync.Mutex
+	// stopClosed guards StopCh: the desktop CLI waits on it once, while the
+	// Android wrapper restarts the engine in-process (ResetShutdown re-arms
+	// it — a sync.Once could never do that, which broke every 2nd Start).
+	stopClosed bool
 	// StopCh closes when the server is ordered to stop (via /api/server/stop).
 	StopCh = make(chan struct{})
 )
 
-// Shutdown stops the HTTP listener and signals StopCh (idempotent).
+// shutdownTimeout bounds Shutdown: generous on desktop (slow disks), short
+// on the phone so the Capacitor bridge call never ANRs the app.
+func shutdownTimeout() time.Duration {
+	if IsPhoneBuild {
+		return 3 * time.Second
+	}
+	return 10 * time.Second
+}
+
+// Shutdown stops the HTTP listener and signals StopCh (idempotent per
+// generation — ResetShutdown re-arms it for the next Start).
 func Shutdown() {
 	if httpServer != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout())
 		defer cancel()
 		_ = httpServer.Shutdown(ctx)
 	}
-	stopOnce.Do(func() { close(StopCh) })
+	stopMu.Lock()
+	defer stopMu.Unlock()
+	if !stopClosed {
+		stopClosed = true
+		close(StopCh)
+	}
+}
+
+// ResetShutdown re-arms the stop signal for a fresh Run (the Android
+// wrapper restarts the engine in-process; the old sync.Once stayed spent
+// after the first Stop and poisoned every later generation).
+func ResetShutdown() {
+	stopMu.Lock()
+	defer stopMu.Unlock()
+	if stopClosed {
+		StopCh = make(chan struct{})
+		stopClosed = false
+	}
 }
 
 // Run serves HTTP on the port (blocking). Use Shutdown to stop it.
 func Run(port int) error {
+	ResetShutdown()    // a previous Stop must not poison this generation
+	rotateOwnerToken() // fresh session owner token per start
 	httpServer = &http.Server{
 		Addr:              "0.0.0.0:" + strconv.Itoa(port),
 		Handler:           http.HandlerFunc(Route),
 		ReadHeaderTimeout: httpReadHeaderTimeout,
-		ReadTimeout:       httpReadTimeout,
-		IdleTimeout:       httpIdleTimeout,
+		// No ReadTimeout (0): slow uploads stream bodies for minutes /
+		// hours and a fixed read deadline would kill them mid-body.
+		// Headers stay bounded by ReadHeaderTimeout above.
+		ReadTimeout: 0,
+		IdleTimeout: httpIdleTimeout,
 		// No WriteTimeout: 20GB downloads/uploads over slow LAN need
 		// hours; per-request ctx cancellation still aborts gone clients.
 		MaxHeaderBytes: httpMaxHeaderBytes,
 	}
+	if TLSEnabled {
+		certFile, keyFile := tlsCertFiles()
+		if certFile == "" {
+			if cf, kf, err := EnsureTLSCert(); err == nil {
+				certFile, keyFile = cf, kf
+			}
+		}
+		if certFile != "" {
+			return httpServer.ListenAndServeTLS(certFile, keyFile)
+		}
+		// Cert unavailable: fall back to plain HTTP rather than not serving.
+	}
 	return httpServer.ListenAndServe()
+}
+
+// BaseURL builds the scheme-aware URL for an IP (https when TLS is on).
+func BaseURL(ip string, port int) string {
+	return TLSScheme() + "://" + ip + ":" + strconv.Itoa(port)
 }
 
 // Route dispatches every request (exported for the CLI and mobile).
 func Route(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
+	// CORS for the Android wrapper must precede any WriteHeader.
+	setCORS(w, r)
+	// Preflight for Capacitor fetch POSTs (admin APIs with JSON bodies).
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(204)
+		return
+	}
 	// Any real request means a human/device is using Beam: reset the
 	// idle auto-shutdown timer. /health probes are excluded so monitoring
 	// loops never keep the server awake by themselves.
@@ -65,6 +125,10 @@ func Route(w http.ResponseWriter, r *http.Request) {
 		}
 		if strings.HasPrefix(path, "/app/") {
 			handleApp(w, r)
+			return
+		}
+		if strings.HasPrefix(path, "/r/") {
+			handleRegistryGet(w, r)
 			return
 		}
 		switch path {
@@ -98,6 +162,9 @@ func Route(w http.ResponseWriter, r *http.Request) {
 		case "/api/net/clients":
 			handleNetClients(w, r)
 			return
+		case "/api/wifi/detect":
+			handleWifiDetect(w, r)
+			return
 		case "/api/config":
 			handleConfigGet(w, r)
 			return
@@ -109,6 +176,21 @@ func Route(w http.ResponseWriter, r *http.Request) {
 			return
 		case "/file_hash":
 			handleFileHash(w, r)
+			return
+		case "/api/shares":
+			handleAPIShares(w, r)
+			return
+		case "/api/browse":
+			handleAPIBrowse(w, r)
+			return
+		case "/api/relay/need":
+			handleAPIRelayNeed(w, r)
+			return
+		case "/api/temp":
+			handleAPITemp(w, r)
+			return
+		case "/api/folder.zip":
+			handleAPIFolderZip(w, r)
 			return
 		}
 		sendEmpty(w, r, 404)
@@ -152,6 +234,24 @@ func Route(w http.ResponseWriter, r *http.Request) {
 		case "/upload":
 			handleUploadMultipart(w, r)
 			return
+		case "/api/share":
+			handleAPIShare(w, r)
+			return
+		case "/api/share/guest":
+			handleAPIShareGuest(w, r)
+			return
+		case "/api/unshare":
+			handleAPIUnshare(w, r)
+			return
+		case "/api/relay/piece":
+			handleAPIRelayPiece(w, r)
+			return
+		case "/api/presence":
+			handleAPIPresence(w, r)
+			return
+		case "/api/temp/clean":
+			handleAPITempClean(w, r)
+			return
 		}
 		sendEmpty(w, r, 404)
 		return
@@ -174,9 +274,9 @@ func ExeDir() string {
 
 // resolveDataPaths is kept as a tiny helper for tests: Beam stores
 // nothing next to the exe anymore (no config.json, no logs/) — only the
-// well-known ~/Downloads/Beam share folder is used.
+// well-known temp dir is used.
 func resolveDataPaths(baseDir, _dataDir, _sharedCfg string) (shared, logs, cfgPath string) {
-	return SharedDefaultDir(), "", ""
+	return TempDefaultDir(), "", ""
 }
 
 // IsPortOpen probes a local TCP port (v4 + v6 localhost).
@@ -191,26 +291,56 @@ func IsPortOpen(port int) bool {
 	return false
 }
 
+// beamHealthyTimeout bounds the self-probe: the phone's 2s budget flaked
+// under Doze/GC pauses while the listener was fine (WebView fetch with a
+// 4s budget still answered) — observed as "native health -> down" flapping
+// next to "http probe -> ok" in production diagnostics.
+func beamHealthyTimeout() time.Duration {
+	if IsPhoneBuild {
+		return 4 * time.Second
+	}
+	return 2 * time.Second
+}
+
 // BeamHealthy reports whether a Beam server (not just any program)
 // answers on the port.
 func BeamHealthy(port int) bool {
-	client := http.Client{Timeout: 2 * time.Second}
-	for _, host := range []string{"127.0.0.1", "::1"} {
-		resp, err := client.Get("http://" + net.JoinHostPort(host, strconv.Itoa(port)) + "/health")
-		if err != nil {
-			continue
-		}
-		body, err := io.ReadAll(io.LimitReader(resp.Body, 4096))
-		resp.Body.Close()
-		if err != nil || resp.StatusCode != 200 {
-			continue
-		}
-		// Structured check (not substring): {"ok":true}
-		var v struct {
-			OK bool `json:"ok"`
-		}
-		if err := json.Unmarshal(body, &v); err == nil && v.OK {
-			return true
+	probes := []http.Client{{Timeout: beamHealthyTimeout()}}
+	if TLSEnabled {
+		// Self-signed LAN cert: skip verification for the loopback self-probe.
+		// #nosec G402 -- loopback health check against our own cert.
+		probes = append(probes, http.Client{
+			Timeout: beamHealthyTimeout(),
+			Transport: &http.Transport{
+				TLSClientConfig: insecureTLSConfig(),
+			},
+		})
+	}
+	schemes := []string{"http://"}
+	if TLSEnabled {
+		schemes = []string{"https://", "http://"}
+	}
+	for _, scheme := range schemes {
+		for _, ci := range probes {
+			c := ci
+			for _, host := range []string{"127.0.0.1", "::1"} {
+				resp, err := c.Get(scheme + net.JoinHostPort(host, strconv.Itoa(port)) + "/health")
+				if err != nil {
+					continue
+				}
+				body, err := io.ReadAll(io.LimitReader(resp.Body, 4096))
+				resp.Body.Close()
+				if err != nil || resp.StatusCode != 200 {
+					continue
+				}
+				// Structured check (not substring): {"ok":true}
+				var v struct {
+					OK bool `json:"ok"`
+				}
+				if err := json.Unmarshal(body, &v); err == nil && v.OK {
+					return true
+				}
+			}
 		}
 	}
 	return false

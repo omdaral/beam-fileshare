@@ -1,15 +1,15 @@
 /* Beam web upload queue — unified lanes, grouped batches, recent list. */
-/* ---------- طابور رفع موحد + دفعات مجمعة: سقف الشرائط ---------- */
-var MAX_FOLDER_FILES=2000,UP_PAR=3,RECENT_MAX=5;
+/* ---------- طابور رفع موحد + دفعات مجمعة: بدون أي حد لعدد الملفات ---------- */
+var UP_PAR=3,RECENT_MAX=5;
 var upQueue=[],upActive=0,batchSeq=0;
-function enqueueUpload(f,rel,adopt,batch,opts){upQueue.push({f:f,rel:rel,adopt:adopt,batch:batch,opts:opts||null});pumpQueue();}
+function enqueueUpload(f,rel,adopt,batch,opts,key){upQueue.push({f:f,rel:rel,adopt:adopt,batch:batch,opts:opts||null,key:(typeof key!=="undefined"&&key!==null)?key:rel});pumpQueue();}
 function pumpQueue(){
   bgKick(); // خدمة خلفية الأندرويد (no-op على الويب)
   while(upActive<UP_PAR&&upQueue.length){
     var it=upQueue.shift();
     if(it.batch&&it.batch.cancelled){dropBatchItem(it.batch,it);continue;}
     upActive++;
-    uploadOne(it.f,it.adopt,it.rel,function(){upActive--;pumpQueue();},it.batch,it.opts);
+    uploadOne(it.f,it.adopt,it.rel,function(){upActive--;pumpQueue();},it.batch,it.opts,it.key);
   }
 }
 function groupKey(rel){var i=rel.indexOf("/");return i>=0?rel.slice(0,i):"";}
@@ -23,6 +23,8 @@ function newBatch(label,total,bytes){
 function enqueueBatch(items,label,opts){
   var box=$("upList");
   var groups={},order=[];
+  var ai;
+  for(ai=0;ai<items.length;ai++){try{items[ai]._k=(label||"batch")+"#"+ai+"#"+(items[ai].rel||items[ai].f.name);}catch(e){}}
   items.forEach(function(o){
     var g=(o.rel&&o.rel.indexOf("/")>=0)?groupKey(o.rel):"";
     if(!groups[g]){groups[g]={items:[]};order.push(g);}
@@ -31,14 +33,14 @@ function enqueueBatch(items,label,opts){
   order.forEach(function(g){
     var list=groups[g].items;
     if(g===""&&list.length===1&&!label){
-      enqueueUpload(list[0].f,list[0].rel||null,null,null,opts||null);
+      enqueueUpload(list[0].f,list[0].rel||null,null,null,opts||null,list[0]._k||list[0].rel);
       return;
     }
     var bytes=0,i;
     for(i=0;i<list.length;i++)bytes+=list[i].f.size||0;
     var b=newBatch(label||(g===""?(list.length+" "+T("batch_files")):g),list.length,bytes);
     buildBatchRow(b,box);
-    for(i=0;i<list.length;i++)enqueueUpload(list[i].f,list[i].rel||null,null,b,opts||null);
+    for(i=0;i<list.length;i++)enqueueUpload(list[i].f,list[i].rel||null,null,b,opts||null,list[i]._k||list[i].rel);
   });
 }
 function buildBatchRow(b,box){
@@ -53,7 +55,7 @@ function buildBatchRow(b,box){
   x.onclick=function(ev){if(ev)ev.stopPropagation();cancelBatch(b);};
   head.appendChild(chev);head.appendChild(ic);head.appendChild(nm);head.appendChild(c);head.appendChild(x);
   head.onclick=function(){b.collapsed=!b.collapsed;syncBatchRow(b);};
-  var bar=document.createElement("div");bar.className="prog";bar.style.display="block";
+  var bar=document.createElement("div");bar.className="prog prog-show";
   var fill=document.createElement("div");bar.appendChild(fill);
   var det=document.createElement("div");det.className="batch-details";
   g.appendChild(head);g.appendChild(bar);g.appendChild(det);
@@ -116,6 +118,8 @@ function maybeFinishBatch(b){
   b.finished=true;
   if(b.cancelEl)b.cancelEl.style.display="none";
   updateBatchRow(b);
+  try{refresh();}catch(e2){}
+  try{refreshSessions();}catch(e3){}
   try{setTimeout(function(){b.collapsed=true;syncBatchRow(b);},4000);}catch(e){}
 }
 function recentBox(){

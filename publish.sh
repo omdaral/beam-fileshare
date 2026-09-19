@@ -3,7 +3,7 @@
 # فحص + قدرات + أيقونات + باينريات + حزم محمولة/نظام + فهرس + لانشرات + APK + تركيب حي + تحقق.
 # عند أي فشل جوهري يتوقف فوراً برسالة عربية، ويرجع تلقائياً للنسخة السابقة لو التركيب تم.
 # الحزم المتعثرة لنقص أدوات تُتخطى بتقرير (لا تفشل النشر).
-# الاستخدام: ./publish.sh [--port 2004] [--install-menu]
+# الاستخدام: ./publish.sh [--port 2004] [--install-menu] [--skip-deb] [--skip-appimage] [--skip-rpm]
 # ملاحظة: تثبيت لانشر القائمة opt-in فقط (--install-menu) — لا يظهر شيء في
 # قائمة ستارت ما لم تطلبه صراحة.
 # لا ملفات جانبية: البورت ثابت 2004، والسجل في /tmp.
@@ -20,10 +20,11 @@ cd "$APP_DIR" || exit 1
 
 PORT=2004
 INSTALL_MENU=0
+SKIP_DEB=0; SKIP_APPIMAGE=0; SKIP_RPM=0
 for a in "$@"; do
   case "$a" in
-    --port|--install-menu|--no-desktop) ;; # معروف — يُعالج أدناه
-    *) echo "استخدام: ./publish.sh [--port 2004] [--install-menu]"; echo "علم غير معروف: $a"; exit 2 ;;
+    --port|--install-menu|--no-desktop|--skip-deb|--skip-appimage|--skip-rpm) ;; # معروف — يُعالج أدناه
+    *) echo "استخدام: ./publish.sh [--port 2004] [--install-menu] [--skip-deb] [--skip-appimage] [--skip-rpm]"; echo "علم غير معروف: $a"; exit 2 ;;
   esac
 done
 while [ $# -gt 0 ]; do
@@ -31,6 +32,9 @@ while [ $# -gt 0 ]; do
     --port) PORT="${2:-}"; shift 2 ;;
     --install-menu) INSTALL_MENU=1; shift ;;
     --no-desktop) shift ;; # اسم قديم: التجاهل هو الافتراضي الآن
+    --skip-deb) SKIP_DEB=1; shift ;;
+    --skip-appimage) SKIP_APPIMAGE=1; shift ;;
+    --skip-rpm) SKIP_RPM=1; shift ;;
     *) shift ;;
   esac
 done
@@ -96,7 +100,32 @@ notify(){
   command -v notify-send >/dev/null 2>&1 && notify-send "$1" "$2" >/dev/null 2>&1 &
   return 0
 }
-health() { curl -s -o /dev/null --max-time 2 "http://127.0.0.1:$PORT/health" 2>/dev/null; }
+health() {
+  # Scheme-aware: desktop defaults to plain HTTP, --tls is HTTPS.
+  # Try HTTPS (insecure -k for self-signed) first, then plain HTTP.
+  curl -sk -o /dev/null --max-time 2 "https://127.0.0.1:$PORT/health" 2>/dev/null \
+    || curl -s -o /dev/null --max-time 2 "http://127.0.0.1:$PORT/health" 2>/dev/null
+}
+# base_url prints the working scheme://host:port (https first, then http).
+base_url() {
+  if curl -sk -o /dev/null --max-time 2 "https://127.0.0.1:$PORT/health" 2>/dev/null; then
+    echo "https://127.0.0.1:$PORT"
+  else
+    echo "http://127.0.0.1:$PORT"
+  fi
+}
+# api_get <path> prints body (tries https -k then http).
+api_get() {
+  curl -sk --max-time 8 "$(base_url)$1" 2>/dev/null \
+    || curl -s --max-time 8 "http://127.0.0.1:$PORT$1" 2>/dev/null
+}
+# api_post <path> POSTs an empty JSON body (tries https -k then http).
+api_post() {
+  curl -sk --max-time 5 -X POST "$(base_url)$1" \
+    -H 'Content-Type: application/json' -d '{}' 2>/dev/null \
+    || curl -s --max-time 5 -X POST "http://127.0.0.1:$PORT$1" \
+    -H 'Content-Type: application/json' -d '{}' 2>/dev/null
+}
 
 wait_down() {
   for _ in $(seq 1 30); do
@@ -180,7 +209,14 @@ else
 fi
 
 step "6/10 حزم النظام (deb/AppImage/rpm — تُبنى هنا، الباقي ملفات)"
-if ./packaging/build-packages.sh all >>"$BUILDLOG" 2>&1; then
+PKGARGS="all"
+[ "$SKIP_DEB" = "1" ] && PKGARGS="$PKGARGS --skip-deb"
+[ "$SKIP_APPIMAGE" = "1" ] && PKGARGS="$PKGARGS --skip-appimage"
+[ "$SKIP_RPM" = "1" ] && PKGARGS="$PKGARGS --skip-rpm"
+# No redirect: build-packages.sh tees each package live to screen + $BUILDLOG,
+# so long steps (mksquashfs, rpmbuild) never look hung.
+# shellcheck disable=SC2086
+if ./packaging/build-packages.sh $PKGARGS; then
   ST_DEB=1; ST_APPIMAGE=1; ST_RPM=1
   ok "الحزم جاهزة في dist/debian + dist/appimage + dist/rpm"
 else
@@ -238,8 +274,7 @@ fi
 
 step "10/10 التركيب المحلي + التحقق الحي"
 if health; then
-  curl -s --max-time 5 -X POST "http://127.0.0.1:$PORT/api/server/stop" \
-    -H 'Content-Type: application/json' -d '{}' >/dev/null 2>&1
+  api_post "/api/server/stop" >/dev/null 2>&1
   wait_down || fail "السيرفر لم يتوقف." "أوقفه يدوياً (زر ⏻ الدائري في أعلى الصفحة) ثم أعد النشر."
   ok "توقف السيرفر القديم"
 else
@@ -260,20 +295,22 @@ if ! wait_up; then
   fail "الجديد فشل ولا توجد نسخة سابقة." "راجع /tmp/beam-server.log."
 fi
 ST_LOCAL=1
-B="http://127.0.0.1:$PORT"
-curl -s --max-time 8 "$B/admin" -o /tmp/beam_pub.html || fail "صفحة المالك لا ترد." "راجع /tmp/beam-server.log."
+# Scheme-aware base (https -k for the default self-signed cert, else http);
+# -k is harmless on plain http.
+B="$(base_url)"
+curl -sk --max-time 8 "$B/admin" -o /tmp/beam_pub.html || fail "صفحة المالك لا ترد." "راجع /tmp/beam-server.log."
 grep -q "Beam" /tmp/beam_pub.html || fail "الصفحة لا تحمل الهوية." "تأكد أن البناء تم من السورس الحالي."
 grep -q "srvStopTop" /tmp/beam_pub.html || fail "زر الإيقاف الجديد غائب من الصفحة." "أعد البناء من سورس نظيف."
 grep -q "unlockCard\|QRmini" /tmp/beam_pub.html \
   && fail "بقايا النظام القديم ما زالت في الصفحة." "أعد البناء من سورس نظيف."
-curl -s --max-time 8 "$B/vendor/qrcode.js" -o /dev/null || fail "مكتبة QR لا تُقدَّم." "راجع /tmp/beam-server.log."
-curl -s --max-time 8 "$B/app/app.js" -o /dev/null || fail "ملف الواجهة /app/app.js لا يُقدَّم." "راجع /tmp/beam-server.log."
-curl -s --max-time 8 "$B/app/style.css" -o /dev/null || fail "ملف الواجهة /app/style.css لا يُقدَّم." "راجع /tmp/beam-server.log."
-LIVEVER="$(curl -s --max-time 5 "$B/api/status" 2>/dev/null | grep -o '"version":"[^"]*"' | head -1 | cut -d'"' -f4)"
+curl -sk --max-time 8 "$B/vendor/qrcode.js" -o /dev/null || fail "مكتبة QR لا تُقدَّم." "راجع /tmp/beam-server.log."
+curl -sk --max-time 8 "$B/app/app.js" -o /dev/null || fail "ملف الواجهة /app/app.js لا يُقدَّم." "راجع /tmp/beam-server.log."
+curl -sk --max-time 8 "$B/app/style.css" -o /dev/null || fail "ملف الواجهة /app/style.css لا يُقدَّم." "راجع /tmp/beam-server.log."
+LIVEVER="$(api_get "/api/status" 2>/dev/null | grep -o '"version":"[^"]*"' | head -1 | cut -d'"' -f4)"
 [ "$LIVEVER" = "$VER" ] || fail "السيرفر الحي نسخة $LIVEVER لا $VER." "راجع /tmp/beam-server.log."
 rm -f /tmp/beam_pub.html
 ok "السيرفر الجديد حي بالنسخة $VER (هوية + زر إيقاف + QR)"
-URL="$(curl -s --max-time 5 "$B/api/status" 2>/dev/null | grep -o '"url":"[^"]*"' | head -1 | cut -d'"' -f4)"
+URL="$(api_get "/api/status" 2>/dev/null | grep -o '"url":"[^"]*"' | head -1 | cut -d'"' -f4)"
 [ -z "$URL" ] && URL="$B"
 
 echo "=========================================="

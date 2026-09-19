@@ -30,6 +30,7 @@ func handleDelete(w http.ResponseWriter, r *http.Request) {
 		}
 		invalidateFileHashPrefix(rel + "/")
 		pruneEmptyParents(rel)
+		invalidateListCaches()
 		writeLog(clientIP(r), "delete_dir", rel+" ("+strconv.FormatInt(int64(n), 10)+" files)")
 		sendJSON(w, r, 200, map[string]interface{}{"ok": true, "removed": n})
 		return
@@ -52,6 +53,7 @@ func handleDelete(w http.ResponseWriter, r *http.Request) {
 	if dir, _ := splitParent(name); dir != "" {
 		pruneEmptyParents(name)
 	}
+	invalidateListCaches()
 	writeLog(clientIP(r), "delete", name)
 	sendJSON(w, r, 200, map[string]interface{}{"ok": true})
 }

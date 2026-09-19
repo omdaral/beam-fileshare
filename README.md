@@ -4,6 +4,22 @@ One small program per OS — **no Python and nothing to install** on your machin
 Your files live in one place you know (`Downloads/Beam`), settings apply to the current session only, and there are no scattered files next to the program.
 
 > **Current version:** `v1.6.0` — the version number appears in a badge on the home page so you can confirm you are running the latest build.
+>
+> **Docs:** [README_AR.md](README_AR.md) (العربية) · [HELP.md](HELP.md) (Troubleshooting عربي + English).
+
+## Download per OS
+
+| OS | File | Launch |
+|---|---|---|
+| Linux amd64 / arm64 | `dist/portables/1.6.0/Beam-1.6.0-linux-*.tar.gz` | Extract, run `./install.sh` once, double-click the **Beam** icon |
+| Windows amd64 / arm64 | `dist/portables/1.6.0/Beam-1.6.0-windows-*.zip` | Keep `Beam.exe` + `Beam.bat` + `VERSION` together, double-click `Beam.bat` |
+| Mac amd64 / arm64 | `dist/portables/1.6.0/Beam-1.6.0-macos-*.zip` | Keep `Beam` + `Beam.command` + `VERSION` together, double-click `Beam.command` |
+| Android | `dist/mobile/Beam-1.6.0-android.apk` | Copy the APK to the phone and install (see `mobile/SETUP.md`) |
+| iPhone | No app — Safari → **Add to Home Screen** | Opens fullscreen like an app |
+
+> `Beam.prev` next to the program is the previous binary kept for **rollback only** — do not distribute it.
+>
+> Host copies to `~/Downloads/Beam` — files appear for everyone instantly, no browser upload needed.
 
 ---
 
@@ -23,7 +39,7 @@ Your files live in one place you know (`Downloads/Beam`), settings apply to the 
 5. **Stopping:** round ⏻ button labeled **"Stop server"** at the top of the page (shown to the device owner only), or `Ctrl+C` in the terminal.
 6. **Peace of mind:** if you leave the server running, it will stop by itself after **5 hours with no activity** (any upload, download, or browsing resets the counter).
 
-> The login link is always fixed on port **2004**: `http://<ip>:2004` — save it in your browser once.
+> The login link is always fixed on port **2004**: `http://<ip>:2004` (plain HTTP by default — no certificate warnings). For encrypted LAN traffic, run with `--tls` (or `BEAM_TLS=1`): then open `https://<ip>:2004`, accept the self-signed warning once, and verify the fingerprint shown by the program.
 
 ### Windows (no install)
 
@@ -56,19 +72,25 @@ Your files live in one place you know (`Downloads/Beam`), settings apply to the 
 
 ## Folders and files
 
-- The **Upload folder** button: always compressed in your browser first, then uploaded as one fast file, and extracted on the server after completion.
+- The **Upload folder** button: uploads directly file-by-file with the same structure — no compression in the browser, each file in its own resumable session.
 - The view is a **collapsible tree** with **instant search** that filters locally without waiting.
 - Each folder has a **compressed download** button and a **delete** button (with double confirmation), and single files are deleted individually.
 - A folder that exceeds the maximum limit is not shown — it appears as a direct-download row with the reason stated.
 
-## Large files (up to 20 GB by default)
+## File sharing
+
+File sharing works through a unified file registry rooted at `~/Downloads/Beam-Temp`.
+- **Host:** just copy your files into the share folder — they appear for everyone automatically, no browser upload and no resume needed.
+- **Guests:** upload from the browser; interrupted uploads resume from the sessions panel (tap Resume, then re-pick the same file — the browser requires this re-pick for security).
+
+## Large files (no size limit by default)
 
 - Uploads **start immediately in small parallel chunks with a checksum per chunk** — no waiting.
 - If the connection drops, re-select the same file and only the missing part resumes — and damaged chunks are retried alone, not the whole file.
 - A **speed and time-remaining** counter shows during upload and download.
-- The **resumable upload sessions** panel shows what stopped, with a resume button.
+- The **resumable upload sessions** panel shows what stopped, with a resume button (guests re-pick the same file; the host serves from disk with no resume needed).
 - The list **updates automatically** every few seconds — there is no refresh button.
-- Two transfer modes: **reliable** (default — for unstable networks) and **turbo** (for maximum speed on stable networks).
+- One fast transfer mode: **reliable + fast automatically** (parallel verified pieces) — no separate turbo switch; large files fall back to direct browser download automatically.
 
 ## Network modes
 

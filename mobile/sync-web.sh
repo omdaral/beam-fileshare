@@ -8,7 +8,6 @@ cd "$(dirname "$0")" || exit 1
 rm -rf www
 mkdir -p www
 cp src/launcher.html www/index.html
-cp ../goserver/web/qrcode-vendor.js www/qrcode.js
 cp ../icon.png www/icon.png
 echo "www/ assembled (launcher only — app loads live from Beam server) ✅"
 ls www/

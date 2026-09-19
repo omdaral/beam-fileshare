@@ -103,7 +103,7 @@ func LanFallbackInfo(port int) map[string]interface{} {
 		port = defaultPort
 	}
 	ip := currentLANIP()
-	url := "http://" + ip + ":" + strconv.Itoa(port)
+	url := BaseURL(ip, port)
 	return map[string]interface{}{
 		"mode": "lan", "ssid": nil, "ip": ip, "port": port, "url": url,
 		"message_ar": "الهوتسبوت غير متاح على هذا الجهاز. الحل: اشتغل بوضع LAN — " +

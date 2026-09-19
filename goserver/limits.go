@@ -25,7 +25,10 @@ var (
 
 	pieceMin     = 256 * 1024
 	pieceMax     = 16 * 1024 * 1024
-	pieceDefault = 2 * 1024 * 1024
+	// Single fast+reliable mode: 4MB verified pieces, 4 lanes. No more
+	// reliable-vs-turbo choice in the UI — speed comes from parallelism,
+	// safety from always-on per-piece checksums.
+	pieceDefault = 4 * 1024 * 1024
 
 	// Per-request caps (previously hardcoded 64M/128M in uploads_http.go).
 	chunkMaxV2     = 64 * 1024 * 1024
@@ -38,6 +41,10 @@ var (
 
 	hashCacheMax = 500
 	uniqueTries  = 10000
+
+	// maxSessionPieces caps the V2 piece count per session (giant-session
+	// guard: init with needN beyond this is rejected with 413).
+	maxSessionPieces = 200000
 )
 
 // Folder-sharing caps (vars so tests can lower them).
@@ -50,12 +57,40 @@ var (
 	maxZipBytes  = int64(4) * 1024 * 1024 * 1024
 )
 
+// Registry-based sharing tunables (vars so tests + env can adjust).
+var (
+	// shareMax caps the live registry entries (POST /api/share guest+host).
+	// One entry per file: a whole folder uploads as N entries, so the
+	// default leaves headroom for full-folder one-click sharing
+	// (still env-tunable via BEAM_SHARE_MAX).
+	shareMax = 2000
+	// relayWaitSec bounds a waiting /r/ download for owner relay bytes.
+	relayWaitSec = 30
+	// presenceTTLsec marks a guest owner absent after this many seconds
+	// without a /api/presence heartbeat. Long enough that a hidden tab,
+	// a sleeping phone, or a short network drop does NOT flip files to
+	// "unavailable" — completed files are served from disk anyway.
+	presenceTTLsec = 180
+	// tempMaxBytes is a WARN-ONLY threshold for the temp dir, reported by
+	// GET /api/temp as "warn_bytes". No auto-delete ever happens —
+	// cleanup is manual via POST /api/temp/clean (product decision).
+	tempMaxBytes = int64(2) * 1024 * 1024 * 1024
+)
+
 // Network / timing tunables.
 var (
 	netcapTTLSec = 30.0
 	lanIPTTLSec  = 8.0
 
+	// TLS tunables (optional self-signed HTTPS for LAN/hotspot).
+	// Default is plain HTTP; enable with --tls / BEAM_TLS=1.
+	tlsEnabledDefault = false
+
 	httpReadHeaderTimeout = 30 * time.Second
+	// httpReadTimeout is retained for header reads / compat only: the
+	// server sets ReadTimeout 0 so slow request bodies (big uploads over
+	// slow LAN) are never killed mid-body; headers stay bounded by
+	// ReadHeaderTimeout above.
 	httpReadTimeout       = 30 * time.Second
 	httpIdleTimeout       = 120 * time.Second
 	httpMaxHeaderBytes    = 1 << 20
@@ -79,6 +114,11 @@ func LimitsSnapshot() map[string]interface{} {
 		"max_rel_depth":   maxRelDepth,
 		"max_zip_files":   maxZipFiles,
 		"max_zip_bytes":   maxZipBytes,
+		"share_max":       shareMax,
+		"relay_wait_sec":  relayWaitSec,
+		"presence_ttl":    presenceTTLsec,
+		"download_conc":   downloadMaxConc,
+		"temp_warn_bytes": tempMaxBytes,
 		"search_max":      200,
 		"poll_status_ms":  10000,
 		"poll_clients_ms": 5000,
@@ -163,7 +203,7 @@ func ApplyEnvOverrides() {
 		pieceMax = pieceMin
 	}
 	if pieceDefault < pieceMin || pieceDefault > pieceMax {
-		pieceDefault = 2 * 1024 * 1024
+		pieceDefault = 4 * 1024 * 1024
 	}
 	chunkMaxV2 = envInt("BEAM_CHUNK_MAX_V2", chunkMaxV2)
 	multipartMax = envInt("BEAM_MULTIPART_MAX", multipartMax)
@@ -181,6 +221,23 @@ func ApplyEnvOverrides() {
 	maxZipFiles = envInt("BEAM_MAX_ZIP_FILES", maxZipFiles)
 	maxZipBytes = envInt64("BEAM_MAX_ZIP_BYTES", maxZipBytes)
 
+	shareMax = envInt("BEAM_SHARE_MAX", shareMax)
+	if shareMax < 1 {
+		shareMax = 1
+	}
+	relayWaitSec = envInt("BEAM_RELAY_WAIT_SEC", relayWaitSec)
+	if relayWaitSec < 1 {
+		relayWaitSec = 1
+	}
+	presenceTTLsec = envInt("BEAM_PRESENCE_TTL_SEC", presenceTTLsec)
+	if presenceTTLsec < 1 {
+		presenceTTLsec = 1
+	}
+	tempMaxBytes = envInt64("BEAM_TEMP_MAX_BYTES", tempMaxBytes)
+	if tempMaxBytes < 0 {
+		tempMaxBytes = 0
+	}
+
 	netcapTTLSec = envFloat("BEAM_NETCAP_TTL", netcapTTLSec)
 	lanIPTTLSec = envFloat("BEAM_LANIP_TTL", lanIPTTLSec)
 
@@ -191,5 +248,10 @@ func ApplyEnvOverrides() {
 	memLogCap = envInt("BEAM_MEMLOG_CAP", memLogCap)
 	if memLogCap < 50 {
 		memLogCap = 50
+	}
+	if v := envInt("BEAM_DOWNLOAD_CONC", downloadMaxConc); v != downloadMaxConc {
+		setDownloadSemSize(v)
+	} else if downloadMaxConc < 8 || downloadMaxConc > 256 {
+		setDownloadSemSize(downloadMaxConc)
 	}
 }

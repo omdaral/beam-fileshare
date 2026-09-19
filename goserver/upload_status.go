@@ -15,6 +15,12 @@ func handleUploadStatus(w http.ResponseWriter, r *http.Request) {
 		fail(w, r, 404, "up_no_session")
 		return
 	}
+	// Migrate legacy V1 guest shares to V2 so the piece engine works.
+	if m.V != 2 {
+		if nm := upgradeGuestV1ToV2(uid); nm != nil && nm.V == 2 {
+			m = nm
+		}
+	}
 	if m.V == 2 {
 		sendJSON(w, r, 200, map[string]interface{}{
 			"id": uid, "offset": contiguousOffset(m),

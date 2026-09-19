@@ -43,6 +43,21 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(BeamServer.class);
         registerPlugin(Hotspot.class);
         super.onCreate(savedInstanceState);
+        requestNotificationPermission();
+    }
+
+    // Android 13+ blocks notifications by default: without this the
+    // "Beam ..." foreground-service notice never appears and the user
+    // has no idea the server runs in the background.
+    private void requestNotificationPermission() {
+        if (android.os.Build.VERSION.SDK_INT < 33) return;
+        if (androidx.core.content.ContextCompat.checkSelfPermission(
+                this, android.Manifest.permission.POST_NOTIFICATIONS)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED) return;
+        androidx.core.app.ActivityCompat.requestPermissions(
+                this,
+                new String[]{android.Manifest.permission.POST_NOTIFICATIONS},
+                4799);
     }
 }
 """
@@ -74,6 +89,23 @@ def step_aar():
     print("beam.aar wired ✅")
 
 
+def step_version():
+    ver_file = os.path.join(APP, "VERSION")
+    need(os.path.isfile(ver_file), "VERSION file missing")
+    with open(ver_file, encoding="utf-8") as f:
+        ver = f.read().strip()
+    need(ver != "", "VERSION is empty")
+    with open(GRADLE, encoding="utf-8") as f:
+        g = f.read()
+    import re
+    g2, n = re.subn(r'versionName\s+"[^"]+"', 'versionName "%s"' % ver, g, count=1)
+    need(n == 1, "versionName not found in build.gradle")
+    if g2 != g:
+        with open(GRADLE, "w", encoding="utf-8") as f:
+            f.write(g2)
+    print("versionName synced to %s ✅" % ver)
+
+
 def step_manifest():
     need(os.path.isfile(MANIFEST), "AndroidManifest.xml missing")
     tree = ET.parse(MANIFEST)
@@ -84,8 +116,16 @@ def step_manifest():
     perms = [
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
+        "android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE",
         "android.permission.WAKE_LOCK",
         "android.permission.POST_NOTIFICATIONS",
+        # Lets the app ask to be exempted from Doze/App-Standby so the
+        # on-phone server survives the background on any OEM (normal
+        # permission; the runtime prompt is shown by BeamServer on start).
+        "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
+        "android.permission.ACCESS_WIFI_STATE",
+        "android.permission.CHANGE_WIFI_STATE",
+        "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.CHANGE_WIFI_MULTICAST_STATE",
     ]
@@ -162,17 +202,52 @@ def step_icons():
         fg.resize((size, size), Image.LANCZOS).save(
             os.path.join(d, "ic_launcher_foreground.png"))
     with open(os.path.join(res, "values", "ic_launcher_background.xml"),
-              "w", encoding="utf-8") as f:
+               "w", encoding="utf-8") as f:
         f.write('<?xml version="1.0" encoding="utf-8"?>\n'
                 '<resources>\n'
                 '    <color name="ic_launcher_background">#F7F5F0</color>\n'
                 '</resources>\n')
     print("launcher icons generated ✅")
 
+    # Status-bar small icon for the foreground-service notice (ic_stat_beam).
+    # REQUIRED by startForegroundService(smallIcon): without a valid drawable
+    # the FGS crashes with BadNotificationException and the server dies in
+    # the background. Status icons must be a WHITE silhouette on transparent.
+    def stat_layer(size):
+        k = size / 48.0
+        layer = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+        d = ImageDraw.Draw(layer)
+        for (x1, y1), (x2, y2), alpha in (
+                ((10, 36), (28, 8), 255),
+                ((22, 38), (36, 16), 115)):
+            a = (k * x1, k * y1)
+            b = (k * x2, k * y2)
+            w = max(1.5, k * 6.5)  # slightly bolder: tiny sizes stay legible
+            d.line([a, b], fill=(255, 255, 255, alpha), width=int(round(w)))
+            for (x, y) in (a, b):
+                d.ellipse([x - w / 2, y - w / 2, x + w / 2, y + w / 2],
+                          fill=(255, 255, 255, alpha))
+        r = k * 5
+        d.ellipse([k * 37 - r, k * 37 - r, k * 37 + r, k * 37 + r],
+                  fill=(255, 255, 255, 255))
+        return layer
+
+    draw = os.path.join(res, "drawable")
+    os.makedirs(draw, exist_ok=True)
+    for dpi, size in (("mdpi", 24), ("hdpi", 36), ("xhdpi", 48),
+                      ("xxhdpi", 72), ("xxxhdpi", 96)):
+        dd = os.path.join(res, "drawable-" + dpi)
+        os.makedirs(dd, exist_ok=True)
+        icon = stat_layer(96).resize((size, size), Image.LANCZOS)
+        icon.save(os.path.join(dd, "ic_stat_beam.png"))
+        icon.save(os.path.join(draw, "ic_stat_beam.png"))
+    print("status icon ic_stat_beam generated ✅")
+
 
 def main():
     step_plugins()
     step_aar()
+    step_version()
     step_manifest()
     step_icons()
     return 0

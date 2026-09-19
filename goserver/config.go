@@ -16,6 +16,7 @@ import (
 type Config struct {
 	Port            int    `json:"port"`
 	SharedDir       string `json:"shared_dir"`
+	TempDir         string `json:"temp_dir"`
 	MaxFileMB       int    `json:"max_file_mb"`
 	WifiSSID        string `json:"wifi_ssid"`
 	WifiPassword    string `json:"wifi_password"`
@@ -32,7 +33,7 @@ func defaultConfig() Config {
 	return Config{
 		Port:            defaultPort,
 		SharedDir:       "",
-		MaxFileMB:       20480,
+		MaxFileMB:       0,
 		WifiSSID:        "Beam",
 		WifiPassword:    "",
 		WifiSecurity:    "WPA",
@@ -46,13 +47,15 @@ func defaultConfig() Config {
 }
 
 // applyDefaultsAndMirror fills missing values and syncs mirror key pairs.
+// MaxFileMB == 0 means unlimited (no per-file cap). Negative values are
+// normalized to 0 so a typo can never impose a hidden limit.
 func (c *Config) applyDefaultsAndMirror() {
 	d := defaultConfig()
 	if c.Port == 0 {
 		c.Port = d.Port
 	}
-	if c.MaxFileMB == 0 {
-		c.MaxFileMB = d.MaxFileMB
+	if c.MaxFileMB < 0 {
+		c.MaxFileMB = 0
 	}
 	if c.WifiSecurity == "" {
 		c.WifiSecurity = d.WifiSecurity
@@ -125,9 +128,14 @@ func cfgSnapshot() Config {
 }
 
 // maxBytes returns the effective per-file limit in bytes.
+// MaxFileMB <= 0 means unlimited: returns a huge sentinel (1<<62) so all
+// size checks pass and only disk space / OS limits apply.
 func maxBytes() int64 {
 	CfgMu.RLock()
 	defer CfgMu.RUnlock()
+	if Cfg.MaxFileMB <= 0 {
+		return int64(1) << 62
+	}
 	return int64(Cfg.MaxFileMB) * 1024 * 1024
 }
 

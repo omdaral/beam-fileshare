@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"sync"
+	"time"
 )
 
 const (
@@ -30,9 +32,74 @@ func isLLMNRName(name string) bool {
 // (mDNS) and beam/b (LLMNR for Windows).
 // getIPs is consulted per query so address changes (hotspot
 // on/off) are picked up without restart.
+// Restartable: the Android wrapper stops/starts the engine in-process.
+// A second Start while responders run is a no-op (no leaked socket per
+// restart); StopNameDiscovery frees the sockets so the next Start rebinds
+// cleanly; and loops that died on their own (bind failure with no WiFi at
+// boot) clear the flag so a later Start retries instead of staying mute
+// forever (the old sync.Once stayed spent after the first failure).
+var (
+	ndMu      sync.Mutex
+	ndRunning bool
+	ndAlive   int // live responder loops (started at 2 per Start)
+	ndStop    chan struct{}
+	mdnsConn  *net.UDPConn
+	llmnrConn *net.UDPConn
+)
+
 func StartNameDiscovery(getIPs func() []string) {
+	ndMu.Lock()
+	if ndRunning {
+		ndMu.Unlock()
+		return
+	}
+	ndRunning = true
+	ndAlive = 2
+	ndStop = make(chan struct{})
+	ndMu.Unlock()
 	go mdnsLoop(getIPs)
 	go llmnrLoop(getIPs)
+}
+
+// StopNameDiscovery halts the responder loops and frees the multicast
+// sockets (phone Stop path — a stopped server must not keep advertising
+// stale addresses, and the next Start must rebind, not reuse dead ones).
+func StopNameDiscovery() {
+	ndMu.Lock()
+	if !ndRunning {
+		ndMu.Unlock()
+		return
+	}
+	ndRunning = false
+	close(ndStop)
+	mc, lc := mdnsConn, llmnrConn
+	mdnsConn, llmnrConn = nil, nil
+	ndMu.Unlock()
+	if mc != nil {
+		_ = mc.Close()
+	}
+	if lc != nil {
+		_ = lc.Close()
+	}
+}
+
+// loopExited marks one responder loop dead; loops that died on their own
+// (bind/join failure) clear ndRunning once both are gone so a later Start
+// retries. Loops stopped via StopNameDiscovery leave the flag cleared.
+func loopExited() {
+	ndMu.Lock()
+	defer ndMu.Unlock()
+	ndAlive--
+	if ndAlive < 0 {
+		ndAlive = 0
+	}
+	if ndAlive == 0 && ndStop != nil {
+		select {
+		case <-ndStop: // explicit stop — ndRunning already cleared
+		default:
+			ndRunning = false // died alone: allow a later Start to retry
+		}
+	}
 }
 func lanIPv4s(getIPs func() []string) []net.IP {
 	var out []net.IP
@@ -45,11 +112,22 @@ func lanIPv4s(getIPs func() []string) []net.IP {
 	return out
 }
 func mdnsLoop(getIPs func() []string) {
+	defer loopExited()
 	conn, err := listenReusePacket("udp4", mdnsAddr)
 	if err != nil {
 		fmt.Printf("  (mDNS beam.local غير متاح: %s — رابط الـ IP يعمل طبيعياً)\n", shortErr(err))
 		return
 	}
+	ndMu.Lock()
+	if !ndRunning {
+		// Stopped while binding — don't leak the socket.
+		ndMu.Unlock()
+		_ = conn.Close()
+		return
+	}
+	mdnsConn = conn
+	stop := ndStop
+	ndMu.Unlock()
 	defer conn.Close()
 	if err := joinMulticast(conn, mdnsAddr); err != nil {
 		fmt.Printf("  (mDNS beam.local غير متاح: %s — رابط الـ IP يعمل طبيعياً)\n", shortErr(err))
@@ -58,8 +136,19 @@ func mdnsLoop(getIPs func() []string) {
 	dst, _ := net.ResolveUDPAddr("udp4", mdnsAddr)
 	buf := make([]byte, 2048)
 	for {
+		// Periodic deadline: lets a Stop close break the loop promptly
+		// instead of blocking on Read forever with a stale socket.
+		_ = conn.SetReadDeadline(time.Now().Add(2 * time.Second))
 		n, src, err := conn.ReadFromUDP(buf)
 		if err != nil {
+			select {
+			case <-stop:
+				return
+			default:
+			}
+			if ne, ok := err.(net.Error); ok && ne.Timeout() {
+				continue
+			}
 			return
 		}
 		_, q, ok := parseQuestion(buf[:n])
@@ -84,11 +173,22 @@ func mdnsLoop(getIPs func() []string) {
 // with systemd-resolved. Any bind failure degrades gracefully: the plain
 // http://beam:2004 URL just won't resolve, IPs keep working.
 func llmnrLoop(getIPs func() []string) {
+	defer loopExited()
 	conn, err := listenReusePacket("udp4", llmnrAddr)
 	if err != nil {
 		fmt.Printf("  (LLMNR beam غير متاح: %s — رابط الـ IP يعمل طبيعياً)\n", shortErr(err))
 		return
 	}
+	ndMu.Lock()
+	if !ndRunning {
+		// Stopped while binding — don't leak the socket.
+		ndMu.Unlock()
+		_ = conn.Close()
+		return
+	}
+	llmnrConn = conn
+	stop := ndStop
+	ndMu.Unlock()
 	defer conn.Close()
 	if err := joinMulticast(conn, llmnrAddr); err != nil {
 		fmt.Printf("  (LLMNR beam غير متاح: %s — رابط الـ IP يعمل طبيعياً)\n", shortErr(err))
@@ -96,8 +196,19 @@ func llmnrLoop(getIPs func() []string) {
 	}
 	buf := make([]byte, 2048)
 	for {
+		// Periodic deadline: lets a Stop close break the loop promptly
+		// instead of blocking on Read forever with a stale socket.
+		_ = conn.SetReadDeadline(time.Now().Add(2 * time.Second))
 		n, src, err := conn.ReadFromUDP(buf)
 		if err != nil {
+			select {
+			case <-stop:
+				return
+			default:
+			}
+			if ne, ok := err.(net.Error); ok && ne.Timeout() {
+				continue
+			}
 			return
 		}
 		if src == nil {

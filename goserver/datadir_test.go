@@ -9,15 +9,18 @@ import (
 	"time"
 )
 
-// Beam keeps no side files: the share folder is always ~/Downloads/Beam
-// (redirected via beamHomeOverride in tests), settings + log are memory.
+// Beam keeps no side files: the only auto-created dir is ~/Downloads/Beam-Temp
+// (redirected via beamHomeOverride in tests), settings + log + registry are memory.
 func TestSharedDefaultDir(t *testing.T) {
 	old := beamHomeOverride
 	beamHomeOverride = "/home/u"
 	defer func() { beamHomeOverride = old }()
 	got := SharedDefaultDir()
-	if got != filepath.Join("/home/u", "Downloads", "Beam") {
+	if got != filepath.Join("/home/u", "Downloads", "Beam-Temp") {
 		t.Fatalf("SharedDefaultDir = %q", got)
+	}
+	if td := TempDefaultDir(); td != got {
+		t.Fatalf("TempDefaultDir = %q, want %q", td, got)
 	}
 	// resolveDataPaths shim still points at the same well-known folder.
 	s, l, c := resolveDataPaths("/app", "", "Shared")

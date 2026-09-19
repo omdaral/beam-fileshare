@@ -1,15 +1,17 @@
 /* Beam web network — status card, QR, server stop, hotspot, admin, autosave, BG service. */
 /* ---------- كارت حالة الشبكة ---------- */
-var qrMode="wifi",lastSsid="",lastSecurity="wpa",lastWifiPass="",netOk=false;
+var qrMode="wifi",lastSsid="",lastSecurity="wpa",lastWifiPass="",lastWifiSrc="",netOk=false;
 function escapeWifi(s){return String(s).replace(/([\\;,:"'])/g,"\\$1");}
 function baseUrl(){return location.protocol+"//"+location.host;}
 function fetchStatus(){
   var xhr=new XMLHttpRequest();
   try{xhr.open("GET","/api/status",true);}catch(e){renderStatus(null);return;}
+  try{var t=(typeof ownerTokenGet==="function")?ownerTokenGet():"";if(t)xhr.setRequestHeader("X-Beam-Owner",t);}catch(e2){}
   xhr.timeout=5000;
   xhr.onload=function(){
     if(xhr.status===200){try{
       var j=JSON.parse(xhr.responseText);
+      try{if(typeof ownerTokenLearn==="function")ownerTokenLearn(j);}catch(e){}
       try{if(j&&j.limits&&typeof applyLimits==="function"&&typeof resetPolling==="function"){if(applyLimits(j.limits))resetPolling();}}catch(e){}
       renderStatus(j);return;
     }catch(e){}}
@@ -19,17 +21,40 @@ function fetchStatus(){
   xhr.ontimeout=function(){renderStatus(null);};
   try{xhr.send();}catch(e){renderStatus(null);}
 }
-var serverDefaultLang="ar",isOwner=false,settingsOpen=false;
+var serverDefaultLang="ar",isOwner=false,settingsOpen=false,isPhone=false;
+function applyPhoneMode(){
+  // Phone mode: Android Local-Only Hotspot picks SSID/password itself,
+  // so the desktop form (custom name/password/open/port) is meaningless.
+  var note=$("phoneModeNote");
+  if(note)note.classList.toggle("hidden",!isPhone);
+  var seg=$("deskModeSeg");
+  if(seg)seg.style.display=isPhone?"none":"";
+  var hf=$("hotspotForm");
+  if(hf&&isPhone)hf.style.display="none";
+  var orw=$("openRow");
+  if(orw)orw.style.display=isPhone?"none":"";
+  var dnr=$("deskNetRow");
+  if(dnr)dnr.style.display=isPhone?"none":"";
+  var wsb=$("wifiShareBox");
+  if(wsb)wsb.style.display=isPhone?"none":"";
+  var cp=$("cfgPort");
+  if(cp&&isPhone){cp.disabled=true;cp.title=T("phone_port_fixed");}
+  else if(cp){cp.disabled=false;cp.title="";}
+  if(isPhone)setAdminMode("lan",false);
+}
 function renderStatus(j){
   if(serverGone||!$("netSsid"))return;
   var ssid=(j&&j.ssid)?String(j.ssid):"Beam";
   var url=(j&&j.url)?String(j.url):baseUrl();
   var clients=(j&&typeof j.clients!=="undefined")?String(j.clients):"—";var lan=(j&&j.lan_mode)?T("net_lan"):T("net_hs");
   var running=!j||j.running!==false;
-  lastSsid=ssid;lastUrl=url;netOk=running;
+  lastSsid=(j&&j.wifi_ssid)?String(j.wifi_ssid):ssid;lastUrl=url;netOk=running;
   lastSecurity=(j&&j.security)?String(j.security):"wpa";
   lastWifiPass=(j&&j.wifi_password)?String(j.wifi_password):"";
+  lastWifiSrc=(j&&j.wifi_source)?String(j.wifi_source):"";
   if(j&&j.default_lang)serverDefaultLang=(j.default_lang==="en")?"en":"ar";
+  isPhone=!!(j&&j.is_phone);
+  applyPhoneMode();
   $("netSsid").textContent=ssid;
   $("netAddr").textContent=url.replace(/^.*:\/\//,"");
   var hero=$("heroUrl");if(hero)hero.textContent=url.replace(/^.*:\/\//,"");
@@ -42,6 +67,15 @@ function renderStatus(j){
   var sm=$("statSsid");if(sm)sm.textContent=ssid;
   var sc=$("statClients");if(sc)sc.textContent=clients;
   var sd=$("statMode");if(sd)sd.textContent=running?lan:T("stopped_full");
+  try{
+    var wsn=$("wifiSrcNote");
+    if(wsn){
+      var src=lastWifiSrc||"none";
+      var label=T("wifi_src_"+src);
+      if(label==="wifi_src_"+src)label=src;
+      wsn.textContent=T("wifi_src_l")+": "+label;
+    }
+  }catch(eWS){}
   updateQR();
   if(!running)show($("netMsg"),T("srv_down"),false);
   else clearMsg($("netMsg"));
@@ -51,6 +85,19 @@ function renderStatus(j){
   if(sb)sb.classList.toggle("hidden",!owner);
   var st=$("srvStopTop");
   if(st)st.classList.toggle("hidden",!owner);
+  try{if(typeof syncShareUI==="function")syncShareUI();}catch(eSS){}
+  try{
+    var fp=(j&&(j.tls_fingerprint||j.tls_fp))?String(j.tls_fingerprint||j.tls_fp):"";
+    var tlsOn=!!(j&&j.tls);
+    var fpEl=$("tlsFp");
+    if(fpEl){
+      if(fp)fpEl.textContent=((typeof T!=="undefined")?T("tls_fp"): "Cert fingerprint")+": "+fp;
+      else fpEl.textContent="";
+      fpEl.style.display=fp?"":"none";
+    }
+    var tlsN=$("tlsNote");
+    if(tlsN)tlsN.style.display=tlsOn?"":"none";
+  }catch(e){}
   if(!owner&&settingsOpen)closeSettings();
   if(owner){
     fetchNetStatus();loadConfig();refreshLogs();
@@ -119,8 +166,7 @@ function onServerStopped(m){
       document.title="Beam";
       // XSS-safe: DOM + textContent (never innerHTML with T()).
       var wrap=document.createElement("div");wrap.className="wrap";
-      var card=document.createElement("div");card.className="card";
-      card.setAttribute("style","text-align:center;padding:48px 20px");
+      var card=document.createElement("div");card.className="card stop-card";
       var h=document.createElement("h2");h.textContent=T("srv_stopped");
       card.appendChild(h);wrap.appendChild(card);
       document.body.textContent="";document.body.appendChild(wrap);
@@ -132,7 +178,12 @@ function loadLocalSettings(){
   try{s=JSON.parse(localStorage.getItem("beam-settings")||"null");}catch(e){}
   if(!s||typeof s!=="object")return;
   if(s.port)setField("cfgPort",s.port);
+  if(s.temp_dir)setField("cfgTemp",s.temp_dir);
   if(typeof s.ssid==="string"&&s.ssid.trim())setField("admSsid",s.ssid.trim());
+  try{
+    if(typeof s.wifi_ssid==="string"&&s.wifi_ssid.trim())setField("wifiSsid",s.wifi_ssid.trim());
+    if(typeof s.wifi_password==="string"&&s.wifi_password)setField("wifiPass",s.wifi_password);
+  }catch(eW){}
   var sel=$("cfgLang");
   if(sel&&(s.default_lang==="ar"||s.default_lang==="en"))sel.value=s.default_lang;
 }
@@ -141,7 +192,14 @@ function saveLocalSettings(body){
 }
 /* ---------- هوتسبوت الهاتف (داخل التطبيق الأصلي فقط) ---------- */
 function nativeBeam(){try{if(window.Capacitor&&Capacitor.getPlatform()==="android"&&Capacitor.registerPlugin)return{beam:Capacitor.registerPlugin("BeamServer"),hs:Capacitor.registerPlugin("Hotspot")};}catch(e){}return null;}
-function initPhoneHs(){var nb=nativeBeam();var row=$("phoneHsRow");if(!nb||!row)return;row.style.display="";var b=$("phoneHsBtn");if(b&&!b.dataset.bound){b.dataset.bound="1";b.onclick=phoneHsStart;}}
+function paintPhoneHs(on,creds){
+  var b=$("phoneHsBtn"),s=$("phoneHsStopBtn"),c=$("phoneHsCreds");
+  if(b)b.classList.toggle("hidden",!!on);
+  if(s)s.classList.toggle("hidden",!on);
+  if(c)c.classList.toggle("hidden",!on||!creds);
+  if(creds&&$("phoneHsCredsV"))$("phoneHsCredsV").textContent=creds;
+}
+function initPhoneHs(){var nb=nativeBeam();var row=$("phoneHsRow");if(!nb||!row)return;row.style.display="";var b=$("phoneHsBtn");if(b&&!b.dataset.bound){b.dataset.bound="1";b.onclick=phoneHsStart;}var sb=$("phoneHsStopBtn");if(sb&&!sb.dataset.bound){sb.dataset.bound="1";sb.onclick=phoneHsStop;}}
 function phoneHsStart(){
   var m=$("phoneHsMsg"),nb=nativeBeam();if(!nb)return;
   show(m,T("hs_phone_starting"),true);
@@ -151,9 +209,19 @@ function phoneHsStart(){
     var ssid=r&&r.ssid,pass=r&&r.pass,sec=(r&&r.security)||"wpa";
     if(!ssid){show(m,T("hs_phone_manual"),false);return;}
     try{var q=nb.beam.setHotspotCreds({ssid:ssid,pass:pass,security:sec});if(q&&q.catch)q.catch(function(){});}catch(e2){}
-    show(m,T("hs_phone_ok")+" "+ssid,true);
+    var creds=ssid+(pass?(" / "+pass):"");
+    paintPhoneHs(true,creds);
+    show(m,T("hs_phone_ok")+" "+creds,true);
     fetchStatus();fetchNetStatus();
   }).catch(function(){show(m,T("hs_phone_manual"),false);});
+}
+function phoneHsStop(){
+  var m=$("phoneHsMsg"),nb=nativeBeam();if(!nb)return;
+  try{if(nb.hs.stop){var s=nb.hs.stop({});if(s&&s.catch)s.catch(function(){});}}catch(e){}
+  try{var q=nb.beam.clearHotspot({});if(q&&q.catch)q.catch(function(){});}catch(e2){}
+  paintPhoneHs(false,"");
+  show(m,T("hs_phone_stopped"),true);
+  fetchStatus();fetchNetStatus();
 }
 /* ---------- إدارة الشبكة والجهاز (للمدير فقط — تظهر حسب /api/status) ---------- */
 var adminMode="lan",adminOpen=false,adminStickyUntil=0;
@@ -175,12 +243,20 @@ function setField(id,val){
   el.value=val;
 }
 function fetchNetStatus(){
-  fetch("/api/net/status").then(function(r){
+  fetch("/api/net/status",{headers:ownerHeaders()}).then(function(r){
     if(r.status===403){return null;}
     if(!r.ok)throw new Error("http"+r.status);
     return r.json();
   }).then(function(j){
     if(!j)return;
+    if(isPhone){
+      // Phone hotspot state comes from the LOHS plugin, not the desktop
+      // nmcli flow: only reflect a confirmed return to LAN.
+      var pm=j.hotspot_running?"hotspot":"lan";
+      if(pm==="lan"&&typeof paintPhoneHs==="function")paintPhoneHs(false,"");
+      renderDevices(j,!!j.hotspot_running);
+      return;
+    }
     // اختيار المستخدم الصريح يبقى لزجاً 30s: لا يعيد الاستطلاع كتابته فوقه
     // (هذا كان سبب "رجوع زر الهوتسبوت للواي فاي" — يُطبق فقط المؤكد من السيرفر).
     var serverMode=j.hotspot_running?"hotspot":(j.lan_mode?"lan":"hotspot");
@@ -196,6 +272,18 @@ function fetchNetStatus(){
     adminOpen=!!j.wifi_open;
     setField("admSsid",j.ssid||"Beam");
     if(j.wifi_password)setField("admPass",j.wifi_password);
+    // Hybrid Wi-Fi sharing: auto-detected values arrive via /api/status;
+    // the owner can correct them here (used when the OS hides the PSK).
+    try{
+      if(typeof j.wifi_ssid!=="undefined")setField("wifiSsid",j.wifi_ssid||"");
+      if(typeof j.wifi_password!=="undefined"&&j.wifi_password)setField("wifiPass",j.wifi_password);
+      var wsn2=$("wifiSrcNote");
+      if(wsn2&&j.wifi_source){
+        var lb=T("wifi_src_"+j.wifi_source);
+        if(lb==="wifi_src_"+j.wifi_source)lb=j.wifi_source;
+        wsn2.textContent=T("wifi_src_l")+": "+lb;
+      }
+    }catch(eW){}
     var ob=$("openCheckBtn");
     var obs=ob.querySelector("span");if(obs)obs.textContent=adminOpen?T("open_on"):T("open_off");
     ob.setAttribute("aria-pressed",adminOpen?"true":"false");
@@ -228,7 +316,7 @@ function renderDevices(j,hotspotOn){
 }
 function fetchClients(){
   if(activeUploads>0||activeDownloads>0)return;
-  fetch("/api/net/clients").then(function(r){
+  fetch("/api/net/clients",{headers:ownerHeaders()}).then(function(r){
     if(!r.ok)throw new Error("http"+r.status);
     return r.json();
   }).then(function(j){
@@ -257,7 +345,7 @@ function netStop(){
 }
 function refreshLogs(){
   var v=$("logView");
-  fetch("/api/logs?tail=200").then(function(r){
+  fetch("/api/logs?tail=200",{headers:ownerHeaders()}).then(function(r){
     if(!r.ok)throw new Error("http"+r.status);
     return r.json();
   }).then(function(j){
@@ -267,7 +355,7 @@ function refreshLogs(){
 }
 function loadConfig(){
   loadLocalSettings(); // prefill instantly from this browser's copy
-  fetch("/api/config").then(function(r){
+  fetch("/api/config",{headers:ownerHeaders()}).then(function(r){
     if(r.status===403)return null;
     if(!r.ok)throw new Error("http"+r.status);
     return r.json();
@@ -275,6 +363,11 @@ function loadConfig(){
     if(!j)return;
     var c=(j&&j.config)||{};
     setField("cfgPort",c.port||2004);
+    setField("cfgTemp",(typeof c.temp_dir==="string")?c.temp_dir:"");
+    try{
+      if(typeof c.wifi_ssid==="string"&&c.wifi_ssid)setField("wifiSsid",c.wifi_ssid);
+      if(typeof c.wifi_password==="string"&&c.wifi_password)setField("wifiPass",c.wifi_password);
+    }catch(eWC){}
     var dl=(c.default_lang==="en")?"en":"ar";
     serverDefaultLang=dl;
     var sel=$("cfgLang");if(sel)sel.value=dl;
@@ -297,6 +390,14 @@ function autoSave(){
   var pass=(($("admPass")||{}).value)||"";
   if(adminMode==="hotspot"&&!adminOpen&&pass.length<8){show(m,T("pass_short"),false);return;}
   var body={port:port,default_lang:lang,ssid:ssid,password:pass,open:adminOpen};
+  try{var tmp=((($("cfgTemp")||{}).value)||"").replace(/^\s+|\s+$/g,"");if(tmp)body.temp_dir=tmp;}catch(eT){}
+  // Manual Wi-Fi join credentials for the QR (hybrid with auto-detect).
+  try{
+    var ws=((($("wifiSsid")||{}).value)||"").replace(/^\s+|\s+$/g,"");
+    var wp2=(($("wifiPass")||{}).value)||"";
+    if(ws)body.wifi_ssid=ws;
+    if(wp2)body.wifi_password=wp2;
+  }catch(eW2){}
   postJSON("/api/config",body).then(function(res){
     if(res.status===200&&res.body&&res.body.ok){
       var t=new Date();
@@ -308,6 +409,42 @@ function autoSave(){
     else show(m,((res.body&&res.body.error)||T("save_fail")),false);
   }).catch(function(){show(m,T("conn_fail"),false);});
 }
+/* ---------- Wi-Fi hybrid: auto-detect (owner only) + manual fallback ---------- */
+function wifiDetect(){
+  var m=$("admMsg"),note=$("wifiSrcNote");
+  if(note)note.textContent=T("wifi_detecting");
+  fetch("/api/wifi/detect",{headers:ownerHeaders()}).then(function(r){
+    if(r.status===403)throw new Error("forbidden");
+    if(!r.ok)throw new Error("http"+r.status);
+    return r.json();
+  }).then(function(j){
+    if(j&&j.ok&&j.ssid){
+      setField("wifiSsid",j.ssid);
+      if(j.password)setField("wifiPass",j.password);
+      if(note)note.textContent=T("wifi_src_l")+": "+T("wifi_src_auto");
+      if(m)show(m,T("wifi_auto_ok"),true);
+      queueAutoSave(); // persist as manual fallback for next runs
+    }else{
+      if(note)note.textContent=T("wifi_src_l")+": "+T("wifi_src_none");
+      if(m)show(m,T("wifi_auto_fail"),false);
+    }
+    fetchStatus();
+  }).catch(function(){if(m)show(m,T("wifi_auto_fail"),false);});
+}
+(function initWifiBox(){
+  function wire(){
+    var d=$("wifiDetectBtn");
+    if(d&&!d.dataset.bound){d.dataset.bound="1";d.onclick=wifiDetect;}
+    var s=$("wifiShowBtn");
+    if(s&&!s.dataset.bound){s.dataset.bound="1";s.onclick=function(){
+      var p=$("wifiPass");if(!p)return;
+      var show=p.type==="password";
+      p.type=show?"text":"password";
+      var sl=s.querySelector("span");if(sl)sl.textContent=show?T("hide_pass"):T("show_pass");
+    };}
+  }
+  try{wire();}catch(e){}
+})();
 /* ---------- خدمة خلفية الأندرويد (BG): no-op كامل على الويب ---------- */
 // تعمل فقط داخل غلاف Capacitor على أندرويد: خدمة أمامية بإشعار دائم تُبقي
 // عملية الرفع حية والشاشة مقفولة. على المتصفح/الديسكتوب لا تفعل شيئاً إطلاقاً.
@@ -327,7 +464,9 @@ function bgWake(on){
   }catch(e){}
 }
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&bgOn)bgWake(true);});
-function bgPlugin(){try{if(window.Capacitor&&Capacitor.getPlatform()==="android"&&Capacitor.registerPlugin)return Capacitor.registerPlugin("ForegroundService");}catch(e){}return null;}
-function bgKick(){bgLastActive=Date.now();bgWake(true);if(bgOn)return;var s=bgPlugin();if(!s)return;try{var p=s.startForegroundService({title:"Beam يرفع…",body:"الرفع مستمر في الخلفية"});if(p&&p.catch)p.catch(function(){});bgOn=true;}catch(e){}}
-function bgIdleCheck(){if(!bgOn&&!bgWakeLock)return;if(Date.now()-bgLastActive<30000)return;bgWake(false);if(isLocalServer)return; // السيرفر يعمل هنا — لا توقف الخدمة أبداً
-var s=bgPlugin();bgOn=false;if(!s)return;try{var q=s.stopForegroundService();if(q&&q.catch)q.catch(function(){});}catch(e){}}
+function bgPlugin(){try{if(window.Capacitor){if(Capacitor.Plugins&&Capacitor.Plugins.ForegroundService)return Capacitor.Plugins.ForegroundService;if(Capacitor.getPlatform&&Capacitor.getPlatform()==="android"&&Capacitor.registerPlugin)return Capacitor.registerPlugin("ForegroundService");}}catch(e){}return null;}
+// Same FGS contract as the launcher: id + smallIcon REQUIRED, serviceType 1 = DATA_SYNC.
+function bgKick(){bgLastActive=Date.now();bgWake(true);if(bgOn)return;var s=bgPlugin();if(!s)return;try{var p=s.startForegroundService({id:2,title:"Beam يرفع…",body:"الرفع مستمر في الخلفية",smallIcon:"ic_stat_beam",serviceType:1});if(p&&p.then)p.then(function(){bgOn=true;}).catch(function(){});else bgOn=true;}catch(e){}}
+function bgIdleCheck(){if(!bgOn&&!bgWakeLock)return;if(Date.now()-bgLastActive<30000)return;bgWake(false);var s=bgPlugin();if(!s){bgOn=false;return;}
+if(isLocalServer){try{s.startForegroundService({id:1,title:"Beam يعمل",body:"سيرفر المشاركة يعمل في الخلفية",smallIcon:"ic_stat_beam",serviceType:1});}catch(e){}return;} // السيرفر يعمل هنا — أعد إشعار السيرفر بدل إيقاف الخدمة
+bgOn=false;try{var q=s.stopForegroundService();if(q&&q.catch)q.catch(function(){});}catch(e){}}

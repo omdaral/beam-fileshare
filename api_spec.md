@@ -11,7 +11,9 @@
 | `lan_mode` | boolean | `true` for Wi-Fi, `false` for direct Hotspot |
 | `security` | string | `wpa` or `open` |
 | `wifi_password` | string | **Intentionally visible to everyone** — the page is a Wi-Fi QR sharing channel |
-| `version` / `is_admin` | string/boolean | Version, and whether the requester is the device owner (localhost) |
+| `wifi_ssid` / `wifi_source` | string | Effective join SSID + source (`hotspot`/`auto`/`manual`/`none`) |
+| `version` / `is_admin` | string/boolean | Version, and whether the requester is the device owner (loopback peer or valid `X-Beam-Owner` token) |
+| `owner_token` | string | **Owner contexts only** (loopback/token/bridge): 64-hex session owner token. Absent from guest responses entirely |
 | `default_lang` | string | Default language for new visitors (`ar` or `en`) — session-only, browser keeps a copy in localStorage |
 | `shared_dir` | string | Path of the single share folder (`~/Downloads/Beam`) — shown on the page |
 | `mdns_url` | string | `http://beam.local:2004` — friendly name that works on all systems (mDNS) |
@@ -23,7 +25,8 @@
 - Full-bleed sections: login hero + steps + network/QR + files + help — no narrow cards.
 - The Settings ⚙️ button in the header and the `#ownerZone` window (modal with tabs: Network/General/Devices & Log/Device) appear for the device owner only — every admin API rejects anyone else (`403`).
 - Language button in the header for everyone (local choice); the language menu inside Settings sets `default_lang` for new visitors after saving.
-- No code, no cookie, no remote login — any non-localhost request to any admin endpoint → `403`.
+- No code, no cookie, no remote login — any request that is neither loopback nor presenting the session owner token → `403` on admin endpoints.
+- Owner proof (deterministic, no heuristics): **(1)** loopback peer (`127/8`, `::1`) is automatically owner on any OS/device; **(2)** any other context presents the 256-bit session token in the `X-Beam-Owner` header (constant-time compare). The token is generated fresh on every server start (memory-only, dies with the process), disclosed only inside owner contexts (`owner_token` field, `BeamServer.ownerToken` bridge), sent in headers only (never URLs/logs), and grants full owner powers. A paired browser stores it in localStorage and is recognized from any URL afterwards.
 
 ## Admin endpoints (device owner only)
 | Path | Description |
@@ -40,16 +43,45 @@
 - `GET /files` → `{files:[{name,path,size,mtime}], dirs:[{path,files,over}], truncated}`.
   `over` is empty (openable) or `files`/`depth`/`list`: an over-limit folder is **not shown as a tree** — the UI offers it as a direct zip row with the reason.
 - `GET /download?file=a/b.txt` and `GET /file_hash?file=a/b.txt` work with paths (with Range).
-- `GET /download_zip?dir=Docs` streams the folder as zip (pre-check: empty is `404`, over the compression limit is `413`).
+- `GET /download_zip?dir=Docs[&method=store]` streams the folder as ZIP-STORE only (no compression, ZIP-only policy for widest device compat; `method=deflate` or any other codec is `400 zip_store_only`). Default `method=store` sends an exact `Content-Length` whenever the archive fits plain zip32 limits, otherwise it falls back to chunked streaming. Empty subdirectories are included as explicit entries. `Content-Disposition` carries both `filename="X.zip"` (ASCII fallback) and `filename*=` (UTF-8).
+  `GET /download_zip?dir=Docs&preflight=1` runs the same pre-checks and returns `{ok:true, files, bytes, name, method}` as JSON without streaming — the web UI calls it first so server errors surface as readable text instead of a corrupt download.
 - `POST /delete` accepts `{file:path}` or `{dir:path}` (safe recursive delete inside the share folder + pruning empty folders).
 - The chunked-upload protocol accepts `name` with a relative path — each file is an independent session (resume/checksums as-is).
 
 ## Transfer modes + always-compressed folders (v1.5.0)
-- Folders are always compressed in the browser first (Deflate if available, otherwise STORE), then uploaded as one resumable `.zip` file; a single `.zip` file is stored as-is and not extracted.
+- Folders upload directly file-by-file with no browser compression (each file its own resumable session keeping the same structure); a single `.zip` uploaded with `extract:true` is unpacked by the server after completion.
 - `upload_init` accepts `noverify:true` (turbo session: chunks without checksums) and `extract:true` (extract intent).
 - `upload_complete` accepts `full_hash` (required for turbo sessions, `422` without it) and `extract`; the extract intent sticks to the session so it works with resume.
-- After completion: background extraction into the tree (pre-check + caps + zip-slip protection + merge without overwriting), then the zip is deleted; any failure keeps the zip with only a log line.
+- After completion: background extraction into the tree (staged under a hidden dot dir, then moved without overwriting; pre-check + live byte/file caps + zip-slip protection + entry modtimes kept), then the zip is deleted; any failure keeps the zip with only a log line.
 - **Reliable** mode (2MB x3 + checksum/chunk, default) and **turbo** mode (8MB x6 + single final check) — a switch per upload/download operation, and turbo download skips IndexedDB persistence.
+
+## HTTPS (optional self-signed LAN certificate)
+
+- Desktop serves **plain HTTP by default** (`http://<ip>:2004`): no warnings,
+  simplest for LAN use.
+- Opt in with `--tls` / `BEAM_TLS=1`: the cert is generated once and kept in
+  `~/Downloads/Beam-Temp/.beam-tls/` (never listed or downloadable). The
+  SHA-256 fingerprint prints on boot and shows in the UI — accept the browser
+  warning once, then compare fingerprints.
+- Every URL the server emits (`/api/status` `url`/`mdns_url`/`plain_url`,
+  hotspot info, LAN fallback) uses the live scheme.
+- `--no-tls` is kept as a deprecated no-op (HTTP is the default). The Android
+  wrapper stays plain HTTP (the system WebView cannot silently trust a
+  self-signed cert — enabling it needs a native `onReceivedSslError`
+  handler, planned with the SAF picker bridge).
+
+## Wi-Fi sharing (auto-detect + manual fallback)
+
+- `/api/status` and `/api/net/status` expose `wifi_ssid` + `wifi_password` +
+  `wifi_source` (`hotspot`/`auto`/`manual`/`none`): in hotspot mode the
+  credentials we created; in LAN mode the OS-detected Wi-Fi
+  (Linux `nmcli`, Windows `netsh`, macOS `networksetup`) with the owner's
+  manual `wifi_ssid`/`wifi_password` as fallback when the PSK needs privileges.
+- `GET /api/wifi/detect` (owner only) forces a fresh OS probe: `{ok, ssid,
+  password, security, source}`.
+- `POST /api/config` accepts `wifi_ssid`/`wifi_password`/`wifi_security`
+  (owner only, session-only) — the Settings → Network → Wi-Fi box edits them
+  with autosave, plus an Auto-detect button.
 
 ## QR (bundled qrcode-generator library — no CDN)
 `/vendor/qrcode.js` is served from the binary. The Wi-Fi QR tabs (with embedded password) and link QR work on both pages. Acceptance gate: real scan with a mobile phone.

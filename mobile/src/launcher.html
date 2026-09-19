@@ -16,225 +16,567 @@ body{margin:0;background:var(--bg0);color:var(--ink);font-family:"Segoe UI",Taho
 .logo{display:flex;align-items:center;gap:12px}
 .logo svg{width:46px;height:46px}
 h1{margin:0;font-size:26px;letter-spacing:.12em}
+.ver{font-size:12px;color:var(--muted);font-weight:700}
 .sub{color:var(--muted);margin:0 0 14px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin:12px 0;text-align:center}
-.status{font-weight:900;font-size:18px;margin:4px 0}
+.card h2{margin:0 0 8px;font-size:17px}
+.status{font-weight:900;font-size:20px;margin:4px 0}
 .status.on{color:var(--ok)}
 .status.off{color:var(--muted)}
-.addr{font-family:monospace;direction:ltr;font-size:20px;font-weight:700;margin:6px 0}
-canvas#qr{width:220px;height:220px;max-width:100%;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px}
-button{min-height:54px;border-radius:12px;font-size:18px;font-weight:900;cursor:pointer;padding:12px 18px;width:100%;margin-top:10px;font-family:inherit}
+.addr{font-family:monospace;direction:ltr;font-size:19px;font-weight:700;margin:6px 0;word-break:break-all}
+button{min-height:56px;border-radius:12px;font-size:18px;font-weight:900;cursor:pointer;padding:12px 18px;width:100%;margin-top:10px;font-family:inherit}
+button:disabled{opacity:.55;cursor:wait}
 .btn-acc{background:var(--acc);color:var(--acc-ink);border:1px solid transparent}
+.btn-stop{background:transparent;color:var(--danger);border:1px solid var(--danger)}
 .btn-line{background:transparent;color:var(--acc);border:1px solid var(--acc)}
 .btn-gray{background:transparent;color:var(--ink);border:1px solid var(--line)}
-.btn-stop{background:transparent;color:var(--danger);border:1px solid var(--danger)}
-.addrbar{display:flex;gap:8px;margin-top:10px}
-.addrbar input{flex:1;min-height:54px;border:1px solid var(--line);border-radius:12px;font-size:17px;padding:10px 12px;direction:ltr;text-align:left;font-family:monospace}
-.addrbar button{width:auto;margin-top:0;white-space:nowrap}
-#msg{margin-top:10px;font-weight:700;display:none}
+#msg{margin-top:10px;font-weight:700;display:none;word-break:break-word}
 #msg.ok{display:block;color:var(--ok)}
 #msg.err{display:block;color:var(--danger)}
 .small{font-size:13px;color:var(--muted)}
-.hidden{display:none!important}
+.kv{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:4px 0;border-top:1px dashed var(--line);text-align:start}
+.kv .k{color:var(--muted);flex:none}
+.kv .v{font-family:monospace;direction:ltr;word-break:break-all;text-align:end}
+#log{direction:ltr;text-align:left;font-family:monospace;font-size:11px;background:#14110d;color:#e8e2d5;border-radius:10px;padding:10px;max-height:180px;overflow-y:auto;margin-top:10px;white-space:pre-wrap;word-break:break-word}
+#log .t{color:#8fd18f}
+#log .e{color:#ff9d8a}
 </style>
 </head>
 <body>
 <div class="wrap">
 <div class="logo">
 <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="1" y="1" width="46" height="46" rx="11" fill="#F7F5F0"/><path d="M10 36 L28 8" stroke="#191714" stroke-width="5.5" stroke-linecap="round" fill="none"/><path d="M22 38 L36 16" stroke="#191714" stroke-width="5.5" stroke-linecap="round" opacity=".45" fill="none"/><circle cx="37" cy="37" r="5" fill="#D9481F"/></svg>
-<div><h1>Beam</h1><p class="sub">سيرفر المشاركة على هذا الهاتف</p></div>
+<div><h1>Beam <span class="ver" id="verBadge"></span></h1><p class="sub">سيرفر المشاركة على هذا الهاتف</p></div>
 </div>
 
 <div class="card">
-<div class="status off" id="status">متوقف</div>
-<div class="addr" id="prettyAddr" style="font-size:17px">beam.local:2004 • beam:2004</div>
-<div class="small">beam.local للجميع • beam لويندوز • والـ IP احتياطي دائم</div>
-<div class="small" id="ipAddr" dir="ltr"></div>
-<canvas id="qr" width="360" height="360"></canvas>
+<div class="status off" id="status">جارٍ الفحص…</div>
+<div class="addr" id="lanAddr">…</div>
+<div class="small" id="shareDir" dir="ltr"></div>
 <div id="msg"></div>
 </div>
 
 <div class="card">
-<button class="btn-acc" id="startBtn">▶ تشغيل السيرفر</button>
-<button class="btn-stop hidden" id="stopBtn">⏻ إيقاف السيرفر</button>
-<button class="btn-line" id="openBtn">فتح واجهة المتصفح</button>
+<button class="btn-acc" id="srvBtn" disabled>جارٍ الفحص…</button>
+<button class="btn-line" id="browserBtn">فتح في المتصفح</button>
+<p class="small">زر واحد للتشغيل والإيقاف — والمتصفح يفتح خارج التطبيق.</p>
 </div>
 
 <div class="card">
-<div class="addrbar">
-<input id="addrInput" placeholder="b أو beam أو beam:2004" autocomplete="off">
-<button class="btn-gray" id="goBtn">انتقال</button>
+<h2>التشخيص — إيه اللي بيحصل ورا الكواليس</h2>
+<div class="kv"><span class="k">الجسر الأصلي</span><span class="v" id="dBridge">…</span></div>
+<div class="kv"><span class="k">المنصة</span><span class="v" id="dPlatform">…</span></div>
+<div class="kv"><span class="k">الصفحة مفتوحة من</span><span class="v" id="dHref">…</span></div>
+<div class="kv"><span class="k">WebView</span><span class="v" id="dWv">…</span></div>
+<div class="kv"><span class="k">خدمة الخلفية</span><span class="v" id="dFgs">…</span></div>
+<div class="kv"><span class="k">إعفاء البطارية</span><span class="v" id="dBatt">…</span></div>
+<div id="log" aria-live="polite"></div>
+<button class="btn-gray" id="copyDiagBtn">نسخ التشخيص</button>
+<button class="btn-gray" id="battBtn">طلب إعفاء من تحسين البطارية</button>
+<p class="small">لو الزر مش شغال: دوس نسخ التشخيص والصق الناتج — هيوضح السبب فوراً.</p>
 </div>
-<p class="small">اكتب b أو beam:2004 للفتح مباشرة.</p>
 </div>
-</div>
-<script src="./qrcode.js"></script>
 <script>
 "use strict";
 function $(id){return document.getElementById(id);}
-var PORT=2004, LOCAL="http://127.0.0.1:"+PORT, timer=null, running=false;
-function show(t,ok){var m=$("msg");m.textContent=t;m.className=ok?"ok":"err";}
-function plugin(name){try{if(window.Capacitor&&Capacitor.registerPlugin)return Capacitor.registerPlugin(name);}catch(e){return null;}}
-function beamSrv(){try{if(window.Capacitor&&Capacitor.getPlatform()==="android")return plugin("BeamServer");}catch(e){}return null;}
-function fgStart(){
-  // Keep the process (and its Go server) alive with screen off.
+// Scheme-aware bases: phone engine is plain HTTP, desktop defaults to
+// self-signed HTTPS. Probe HTTPS first then HTTP and remember the winner
+// in LOCAL so every later call (status/browser) uses the working scheme.
+var PORT=2004,
+    BASE_HTTPS="https://127.0.0.1:"+PORT,
+    BASE_HTTP="http://127.0.0.1:"+PORT,
+    LOCAL=BASE_HTTPS, timer=null;
+var running=false, busy=true; // busy=true until first probe finishes
+var lastStatus=null;
+
+/* ---------- السجل الحي: كل حاجة بتتكتب هنا، مفيش صمت ---------- */
+var LOG_LINES=[];
+function ts(){try{var d=new Date();return d.toTimeString().slice(0,8);}catch(e){return "?";}}
+function log(t,isErr){
   try{
-    if(!(window.Capacitor&&Capacitor.getPlatform()==="android"))return;
-    var s=plugin("ForegroundService");
-    if(!s)return;
-    var p=s.startForegroundService({title:"Beam يعمل",body:"سيرفر المشاركة يعمل في الخلفية"});
-    if(p&&p.catch)p.catch(function(){});
+    LOG_LINES.push(ts()+" "+(isErr?"[ERR] ":"")+t);
+    if(LOG_LINES.length>50)LOG_LINES.splice(0,LOG_LINES.length-50);
+    var box=$("log"),html="";
+    var show=LOG_LINES.slice(-20);
+    for(var i=0;i<show.length;i++){
+      var line=show[i].replace(/&/g,"&amp;").replace(/</g,"&lt;");
+      var cls=show[i].indexOf("[ERR]")>=0?"e":"t";
+      html+='<span class="'+cls+'">'+line+"</span>\n";
+    }
+    box.innerHTML=html;
+    box.scrollTop=box.scrollHeight;
   }catch(e){}
 }
-function fgStop(){
+function errName(e){
   try{
-    if(!(window.Capacitor&&Capacitor.getPlatform()==="android"))return;
-    var s=plugin("ForegroundService");
-    if(!s)return;
-    var p=s.stopForegroundService();
-    if(p&&p.catch)p.catch(function(){});
-  }catch(e){}
+    if(e===null||e===undefined)return "null";
+    if(typeof e==="string")return e;
+    return (e.message||e.errorMessage||JSON.stringify(e)).slice(0,220);
+  }catch(ex){return "unknown";}
 }
 
-/* ---------- الحالة والـ QR ---------- */
-function paint(){
-  var st=$("status");
-  st.textContent=running?"يعمل الآن":"متوقف";
-  st.className="status "+(running?"on":"off");
-  $("startBtn").classList.toggle("hidden",running);
-  $("stopBtn").classList.toggle("hidden",!running);
-}
-async function probe(url){
-  var c=new AbortController(),to=setTimeout(function(){c.abort();},1500);
+function show(t,ok){var m=$("msg");if(!t){m.textContent="";m.className="";return;}m.textContent=t;m.className=ok?"ok":"err";}
+function plugin(name){try{if(window.Capacitor){// The injected native bridge (vanilla JS asset page) exposes
+    // ready-made proxies at Capacitor.Plugins — registerPlugin() only
+    // exists in the @capacitor/core bundler runtime, which this page
+    // does not load. Prefer direct proxies, keep registerPlugin as fallback.
+    if(Capacitor.Plugins&&Capacitor.Plugins[name]){pluginPath[name]="Plugins";return Capacitor.Plugins[name];}
+    if(typeof Capacitor.registerPlugin==="function"){pluginPath[name]="registerPlugin";return Capacitor.registerPlugin(name);}}}catch(e){log("plugin("+name+") lookup threw: "+errName(e),true);return null;}
+  try{log("plugin("+name+") NOT FOUND (Plugins="+(window.Capacitor&&Capacitor.Plugins?Object.keys(Capacitor.Plugins).join(","):"none")+")",true);}catch(e2){}
+  return null;}
+var pluginPath={};
+function capPlatform(){
   try{
-    var r=await fetch(url+"/health",{signal:c.signal,cache:"no-store"});
-    if(!r.ok)return null;
-    var j=await r.json();
-    return (j&&j.ok)?url:null;
-  }catch(e){return null;}
-  finally{clearTimeout(to);}
+    if(!window.Capacitor)return "no-Capacitor-object";
+    if(typeof Capacitor.getPlatform!=="function")return "no-getPlatform";
+    return String(Capacitor.getPlatform());
+  }catch(e){return "getPlatform-threw:"+errName(e);}
+}
+function onAndroid(){return capPlatform()==="android";}
+function beamSrv(){try{if(onAndroid())return plugin("BeamServer");}catch(e){log("beamSrv threw: "+errName(e),true);}return null;}
+
+/* ---------- بيئة التشغيل: تتكتب مرة واحدة في السجل ---------- */
+function paintDiag(){
+  try{
+    var hasCap=(typeof window.Capacitor!=="undefined");
+    $("dBridge").textContent=hasCap?"موجود":"غايب ⛔";
+    $("dPlatform").textContent=capPlatform();
+    var href="?",origin="?";
+    try{href=String(location.href);}catch(e){href="unreadable";}
+    try{origin=String(location.origin);}catch(e2){}
+    $("dHref").textContent=(origin&&origin!=="null"?origin+" ":"")+href.slice(0,90);
+    var ua="?";
+    try{ua=String(navigator.userAgent||"?");}catch(e3){}
+    var m=ua.match(/Chrome\/[\d.]+|Version\/[\d.]+|Android [\d.]+/g);
+    $("dWv").textContent=m?m.join(" "):ua.slice(0,60);
+  }catch(e){log("paintDiag threw: "+errName(e),true);}
+}
+function diagText(){
+  var out=[];
+  try{
+    out.push("Beam diagnostics "+new Date().toISOString());
+    out.push("ver="+(($("verBadge").textContent)||"?")+" running="+running+" busy="+busy);
+    out.push("bridge="+(typeof window.Capacitor!=="undefined"?"present":"ABSENT")+" platform="+capPlatform());
+    try{out.push("fgs="+(($("dFgs").textContent)||"?")+" battery="+(($("dBatt").textContent)||"?"));}catch(e3){}
+    try{out.push("href="+location.href);}catch(e){}
+    try{out.push("ua="+navigator.userAgent);}catch(e2){}
+    out.push("--- log (last 30) ---");
+    var tail=LOG_LINES.slice(-30);
+    for(var i=0;i<tail.length;i++)out.push(tail[i]);
+  }catch(e){out.push("diagText threw: "+errName(e));}
+  return out.join("\n");
+}
+$("battBtn").onclick=async function(){
+  log("battery exemption requested manually");
+  await beamCall("requestBatteryExemption");
+  await paintBgChain();
+  var ex=await battExempt();
+  show(ex?"تم الإعفاء — السيرفر محمي في الخلفية.":"ما زال مقيّداً — اختر «سماح» في النافذة.",ex);
+};
+$("copyDiagBtn").onclick=async function(){
+  var t=diagText();
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(t);show("اتنسخ التشخيص — الصقه في الشات.",true);log("diagnostics copied ("+t.length+" chars)");}
+    else{
+      var ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();
+      document.execCommand("copy");document.body.removeChild(ta);
+      show("اتنسخ التشخيص — الصقه في الشات.",true);log("diagnostics copied via fallback");
+    }
+  }catch(e){show("تعذر النسخ: "+errName(e),false);log("copy failed: "+errName(e),true);}
+};
+
+function fgStart(){
+  return fgStartWith(FGS_ID_SERVER,"Beam يعمل","سيرفر المشاركة يعمل في الخلفية");
+}
+// Foreground-service contract (must match the Capawesome plugin + manifest):
+// id (number) + smallIcon (res/drawable/ic_stat_beam) are REQUIRED — omitting
+// them rejects the call and the server dies in the background with no notice.
+// serviceType 1 = DATA_SYNC, matching foregroundServiceType="dataSync".
+var FGS_ID_SERVER=1, FGS_ID_UPLOAD=2, FGS_ICON="ic_stat_beam", FGS_TYPE_DATASYNC=1;
+function fgsArgs(id,title,body){
+  return {id:id,title:title,body:body,smallIcon:FGS_ICON,serviceType:FGS_TYPE_DATASYNC};
+}
+// Generic BeamServer bridge call -> Promise (null when no bridge/method).
+function beamCall(method,args){
+  return new Promise(function(resolve){
+    var srv=null;
+    try{srv=beamSrv();}catch(e){resolve(null);return;}
+    if(!srv||typeof srv[method]!=="function"){resolve(null);return;}
+    try{
+      var q=srv[method](args||{});
+      if(q&&q.then)q.then(function(r){resolve(r||{});}).catch(function(e){log("BeamServer."+method+" rejected: "+errName(e),true);resolve(null);});
+      else{log("BeamServer."+method+": no promise returned",true);resolve(null);}
+    }catch(e){log("BeamServer."+method+" threw: "+errName(e),true);resolve(null);}
+  });
+}
+async function fgsAlive(){var r=await beamCall("fgsAlive");return !!(r&&r.alive);}
+// true when exempt OR when we cannot check (non-android preview).
+async function battExempt(){var r=await beamCall("batteryExempt");return !(r&&r.exempt===false);}
+async function paintBgChain(){
+  if(!onAndroid()){try{$("dFgs").textContent="—";$("dBatt").textContent="—";}catch(e){}return{alive:false,exempt:true};}
+  var alive=await fgsAlive(), exempt=await battExempt();
+  try{
+    $("dFgs").textContent=alive?"تعمل ✅":"لا تعمل ⛔";
+    $("dBatt").textContent=exempt?"مُعفى ✅":"مقيّد ⛔";
+  }catch(e){}
+  return{alive:alive,exempt:exempt};
+}
+// Ask once per session for the Doze/OEM-killer exemption (system dialog).
+var battAsked=false;
+async function ensureBattery(){
+  if(!onAndroid()||battAsked)return true;
+  battAsked=true;
+  if(await battExempt()){log("battery: already exempt");return true;}
+  log("battery: NOT exempt — opening system exemption dialog");
+  show("اسمح بتشغيل Beam في الخلفية (اختر «سماح») حتى لا يتوقف السيرفر.",false);
+  await beamCall("requestBatteryExemption");
+  await paintBgChain();
+  return false;
+}
+async function fgStartWith(id,title,body){
+  if(!onAndroid()){log("fgStart: skipped (not android)");return true;}
+  var s=plugin("ForegroundService");
+  if(!s){
+    log("ForegroundService plugin missing — no notification possible",true);
+    show("خدمة الخلفية غير متوفرة — السيرفر سيتوقف لو خرجت من التطبيق.",false);
+    return false;
+  }
+  try{
+    await s.startForegroundService(fgsArgs(id,title,body));
+  }catch(e){
+    log("fgStart REJECTED: "+errName(e),true);
+    show("تعذر تشغيل خدمة الخلفية ("+errName(e)+") — السيرفر سيتوقف لو خرجت من التطبيق.",false);
+    await paintBgChain();
+    return false;
+  }
+  // The plugin resolves once the intent is sent — VERIFY the notice posted.
+  var ok=false;
+  for(var i=0;i<6;i++){
+    await new Promise(function(r){setTimeout(r,500);});
+    if(await fgsAlive()){ok=true;break;}
+  }
+  if(ok){log("persistent notice VERIFIED alive: "+title);}
+  else{
+    log("FGS call resolved but notice NOT posted (fgsAlive=false) — enable app notifications in Android settings",true);
+    show("الإشعار الدائم لم يظهر — فعّل إشعارات تطبيق Beam من إعدادات أندرويد.",false);
+  }
+  await paintBgChain();
+  return ok;
+}
+function fgStop(){
+  if(!onAndroid())return;
+  var s=plugin("ForegroundService");
+  if(!s){log("fgStop: plugin missing",true);return;}
+  try{
+    var p=s.stopForegroundService();
+    if(p&&p.then)p.then(function(){log("foreground service stopped");}).catch(function(e){log("fgStop rejected: "+errName(e),true);});
+  }catch(e){log("fgStop threw: "+errName(e),true);}
+}
+
+/* ---------- الحالة: زر واحد يعكس الواقع ---------- */
+function paint(busyLabel){
+  var st=$("status"), btn=$("srvBtn");
+  if(busy){
+    st.textContent=busyLabel||"جارٍ التنفيذ…";
+    st.className="status off";
+  }else{
+    st.textContent=running?"يعمل الآن":"متوقف";
+    st.className="status "+(running?"on":"off");
+  }
+  btn.disabled=!!busy;
+  if(busy){
+    btn.textContent=busyLabel||"جارٍ التنفيذ…";
+    btn.className="btn-line";
+  }else if(running){
+    btn.textContent="⏻ إيقاف السيرفر";
+    btn.className="btn-stop";
+  }else{
+    btn.textContent="▶ تشغيل السيرفر";
+    btn.className="btn-acc";
+  }
+}
+// Primary probe: native plugin (no HTTP/CORS involved). Fallback: HTTP.
+function nativeHealth(){
+  return new Promise(function(resolve){
+    var srv=beamSrv();
+    if(!srv){resolve(null);return;}
+    if(!srv.health){log("native health: method missing on proxy",true);resolve(null);return;}
+    try{
+      var q=srv.health({});
+      if(q&&q.then)q.then(function(r){
+        var s=r&&r.status;
+        log("native health -> "+s);
+        if(s==="ok"){resolve(true);if(r&&r.shareDir)setShareDir(String(r.shareDir));}
+        else if(s==="down")resolve(false);
+        else resolve(null); // "stopped" or unknown
+      }).catch(function(e){log("native health rejected: "+errName(e),true);resolve(null);});
+      else{log("native health: no promise returned",true);resolve(null);}
+    }catch(e){log("native health threw: "+errName(e),true);resolve(null);}
+  });
+}
+async function httpProbe(url){
+  try{
+    var c=new AbortController(),to=setTimeout(function(){c.abort();},4000);
+    try{
+      var r=await fetch(url+"/health",{signal:c.signal,cache:"no-store"});
+      if(!r.ok){log("http probe: status "+r.status);return null;}
+      var j=await r.json();
+      log("http probe -> ok="+!!(j&&j.ok));
+      return (j&&j.ok)?url:null;
+    }catch(e){log("http probe failed: "+errName(e));return null;}
+    finally{clearTimeout(to);}
+  }catch(e){log("httpProbe threw: "+errName(e),true);return null;}
+}
+function setShareDir(s){if(s)$("shareDir").textContent=s;}
+async function fetchStatusOnce(base){
+  var r=await fetch(base+"/api/status",{cache:"no-store"});
+  if(!r.ok){log("api/status: status "+r.status,true);return null;}
+  return await r.json();
+}
+async function fetchStatus(){
+  try{
+    var j=null, used=LOCAL;
+    try{j=await fetchStatusOnce(LOCAL);}
+    catch(e){
+      // Fallback to the other scheme once (e.g. server switched http<->https).
+      var alt=(LOCAL===BASE_HTTPS)?BASE_HTTP:BASE_HTTPS;
+      log("api/status via "+LOCAL+" failed ("+errName(e)+"), trying "+alt);
+      try{j=await fetchStatusOnce(alt);used=alt;}catch(e2){throw e2;}
+    }
+    if(!j)return;
+    LOCAL=used; lastStatus=j;
+    if(j&&j.version)$("verBadge").textContent="v"+j.version;
+    var url=(j&&j.url)?String(j.url):"";
+    var lan=url?url.replace(/^.*:\/\//,""):"";
+    if(lan){
+      $("lanAddr").textContent=lan;
+      try{localStorage.setItem("beam-lan",lan);}catch(e){}
+    }
+    if(j&&j.shared_dir)setShareDir(String(j.shared_dir));
+    log("status: ver="+(j&&j.version)+" lan="+lan);
+  }catch(e){
+    log("api/status failed: "+errName(e),true);
+    if($("lanAddr").textContent==="…"||$("lanAddr").textContent==="..."){
+      try{var s=localStorage.getItem("beam-lan");if(s)$("lanAddr").textContent=s;}catch(e2){}
+    }
+  }
 }
 async function refreshStatus(){
-  var ok=await probe(LOCAL);
-  running=!!ok;
-  paint();
-  if(running)drawQR();
+  var ok=await probeOnce();
+  if(ok){failStreak=0;running=true;}
+  else{
+    failStreak++;
+    // Debounce: a single missed probe (GC pause, Doze hiccup) must not
+    // flip the UI to "down". Only consecutive failures count.
+    if(failStreak>=2)running=false;
+    else log("transient probe miss ("+failStreak+"/2) — keeping state");
+  }
+  if(running){await fetchStatus();}
   return running;
 }
-function joinURL(){
-  // Prefer the real LAN IP when known (mDNS can fail on some routers);
-  // fall back to the pretty beam.local name.
-  try{
-    var ip=($("ipAddr").textContent||"").trim().split(":")[0];
-    if(/^\d+\.\d+\.\d+\.\d+$/.test(ip))return "http://"+ip+":"+PORT;
-  }catch(e){}
-  return "http://beam.local:"+PORT;
-}
-function drawQR(){
-  var url=joinURL();
-  try{
-    var qr=qrcode(0,"L");
-    qr.addData(url);
-    qr.make();
-    var n=qr.getModuleCount(),quiet=4,scale=8;
-    var canvas=$("qr");
-    canvas.width=(n+quiet*2)*scale;canvas.height=(n+quiet*2)*scale;
-    var ctx=canvas.getContext("2d");
-    ctx.fillStyle="#ffffff";ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle="#000000";
-    for(var y=0;y<n;y++)for(var x=0;x<n;x++)if(qr.isDark(y,x))ctx.fillRect((x+quiet)*scale,(y+quiet)*scale,scale,scale);
-  }catch(e){
-    // minimal fallback: show the URL text if QR lib missing
-    var c=$("qr").getContext("2d");
-    c.fillStyle="#fff";c.fillRect(0,0,360,360);
-    c.fillStyle="#191714";c.font="20px monospace";c.textAlign="center";
-    c.fillText(url,180,180);
+// Raw single probe without debounce (for start/stop verification).
+// Tries HTTPS first (desktop default, self-signed) then HTTP (phone
+// engine). Remembers the winner in LOCAL so status/browser reuse it.
+// A self-signed cert the WebView doesn't trust yet fails fetch here —
+// in that case accept the cert once in the browser, then retry.
+async function probeOnce(){
+  var nh=await nativeHealth();
+  if(nh===true){
+    var h=await httpProbe(BASE_HTTPS);
+    if(h){LOCAL=h;return h;}
+    var p=await httpProbe(BASE_HTTP);
+    if(p){LOCAL=p;return p;}
+    return true; // native up even if HTTP(S) blocked by cert
   }
-  // direct-IP fallback line under the pretty address
-  fetch(LOCAL+"/api/status").then(function(r){return r.json();}).then(function(j){
-    $("ipAddr").textContent=(j&&j.url)?String(j.url).replace(/^.*:\/\//,""):"";
-  }).catch(function(){});
+  var h2=await httpProbe(BASE_HTTPS);
+  if(h2){LOCAL=h2;return h2;}
+  var p2=await httpProbe(BASE_HTTP);
+  if(p2){LOCAL=p2;return p2;}
+  return null;
+}
+var failStreak=0, failStreakBg=0;
+function activeScheme(){
+  try{if(LOCAL.indexOf("https:")===0)return "https://";}catch(e){}
+  try{if(lastStatus&&lastStatus.url&&String(lastStatus.url).indexOf("https:")===0)return "https://";}catch(e2){}
+  return "http://";
+}
+function lanURL(){
+  if(lastStatus&&lastStatus.url)return String(lastStatus.url);
+  var t=($("lanAddr").textContent||"").trim();
+  var sc=activeScheme();
+  if(/^\d+\.\d+\.\d+\.\d+(:\d+)?$/.test(t))return sc+t;
+  try{
+    var s=localStorage.getItem("beam-lan");
+    if(s&&/^\d+\.\d+\.\d+\.\d+(:\d+)?$/.test(s.trim()))return sc+s.trim();
+  }catch(e){}
+  return LOCAL;
 }
 function poll(){
   if(timer)clearInterval(timer);
-  timer=setInterval(refreshStatus,5000);
+  timer=setInterval(async function(){
+    await refreshStatus();paint();
+    await paintBgChain();
+    // Re-assert a lost notice while the server runs (debounced: the FGS
+    // can flap during Doze/GC; only consecutive losses re-trigger).
+    if(running&&onAndroid()){
+      if(await fgsAlive()){failStreakBg=0;}
+      else if(++failStreakBg>=2){
+        failStreakBg=0;
+        log("FGS lost while server runs — re-starting notice");
+        await fgStart();
+      }
+    }else failStreakBg=0;
+  },8000);
 }
 
-/* ---------- تشغيل / إيقاف ---------- */
-$("startBtn").onclick=async function(){
+/* ---------- زر واحد: تشغيل / إيقاف ---------- */
+async function doStart(){
   var srv=beamSrv();
-  show("جارٍ التشغيل…",true);
-  if(srv){
-    try{await srv.start({});fgStart();}catch(e){show("تعذر التشغيل",false);return;}
+  if(!srv){
+    log("start pressed but bridge absent -> preview mode",true);
+    show("افتح تطبيق Beam نفسه من أيقونته — الصفحة دي مفتوحة بدون الجسر الأصلي (راجع كارت التشخيص).",false);
+    return false;
   }
+  show("جارٍ التشغيل…",true);
+  log("calling BeamServer.start ...");
+  try{await srv.start({});log("BeamServer.start resolved");}
+  catch(e){log("BeamServer.start REJECTED: "+errName(e),true);show("تعذر التشغيل: "+errName(e),false);return false;}
+  var fgsOk=await fgStart();wakeLockOn();
+  ensureBattery(); // system exemption dialog, once per session (no await: probes first)
   for(var i=0;i<20;i++){
-    if(await probe(LOCAL)){show("",true);paint();drawQR();poll();return;}
+    if(await probeOnce()){
+      log("server answered after "+((i+1)*0.5).toFixed(1)+"s");
+      // Keep any background-chain warning visible instead of clearing it.
+      if(fgsOk)show("",true);
+      await fetchStatus();return true;
+    }
     await new Promise(function(r){setTimeout(r,500);});
   }
-  show("تعذر تشغيل السيرفر",false);
-};
-$("stopBtn").onclick=async function(){
+  var h=await nativeHealth();
+  if(h===true){log("server late-answered on recheck");if(fgsOk)show("",true);await fetchStatus();return true;}
+  log("server never answered within 10s",true);
+  show("تعذر تشغيل السيرفر — أعد المحاولة.",false);
+  return false;
+}
+async function doStop(){
   var srv=beamSrv();
+  log("calling BeamServer.stop ...");
   try{
-    if(srv){await srv.stop({});}
-    else{await fetch(LOCAL+"/api/server/stop",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});}
-  }catch(e){}
-  fgStop();
-  running=false;paint();
-  show("توقف السيرفر",true);
-  if(timer)clearInterval(timer);
+    if(srv){await srv.stop({});log("BeamServer.stop resolved");}
+    else{
+      // Preview/iPhone path (no bridge): try discovered base then the other scheme.
+      var bases=[LOCAL,(LOCAL===BASE_HTTPS)?BASE_HTTP:BASE_HTTPS], done=false;
+      for(var bi=0;bi<bases.length&&!done;bi++){
+        try{await fetch(bases[bi]+"/api/server/stop",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});log("stop via HTTP(S): "+bases[bi]);done=true;}
+        catch(e){log("stop via "+bases[bi]+" failed: "+errName(e));}
+      }
+    }
+  }catch(e){log("stop call threw: "+errName(e),true);}
+  try{if(srv&&srv.clearHotspot){var q=srv.clearHotspot({});if(q&&q.catch)q.catch(function(e){log("clearHotspot: "+errName(e),true);});}}catch(e2){log("clearHotspot threw: "+errName(e2),true);}
+  try{var h=plugin("Hotspot");if(h&&h.stop){var s=h.stop({});if(s&&s.then)await s;log("hotspot stopped");}}catch(e3){log("hotspot stop: "+errName(e3),true);}
+  fgStop();wakeLockOff();
+  for(var i=0;i<10;i++){
+    if(!(await probeOnce())){log("server confirmed down");show("توقف السيرفر",true);return true;}
+    await new Promise(function(r){setTimeout(r,400);});
+  }
+  // Raw probe (not refreshStatus): the UI state needs 2 consecutive misses
+  // to flip, which is slower than this 4s wait — trusting the debounced
+  // state here reported a false "still running" right after a real stop.
+  if(!(await probeOnce())){log("server down on recheck");show("توقف السيرفر",true);return true;}
+  log("server STILL running after stop",true);
+  show("ما زال يعمل — أعد الضغط.",false);
+  return false;
+}
+$("srvBtn").onclick=async function(){
+  if(busy){log("srvBtn pressed while busy — ignored");return;}
+  busy=true;
+  if(running){
+    paint("جارٍ الإيقاف…");
+    log("--- STOP pressed ---");
+    running=await doStop()?false:await refreshStatus();
+    if(timer)clearInterval(timer);
+    if(running)poll();
+  }else{
+    paint("جارٍ التشغيل…");
+    log("--- START pressed ---");
+    running=await doStart();
+    poll();
+  }
+  busy=false;paint();
+  paintBgChain(); // refresh FGS/battery rows after any start/stop
 };
 
-/* ---------- فتح المتصفح ---------- */
-$("openBtn").onclick=async function(){
-  var url=joinURL();
+/* ---------- فتح في متصفح خارجي بوضع المالك (نبقى في اللانشر) ---------- */
+// NOTE: open the LOOPBACK url, not the LAN url. Only a loopback peer is
+// recognized as the server owner (is_admin), so this is what reveals the
+// settings + stop buttons in the browser page — same as on desktop.
+// The LAN address stays displayed above for manual sharing with others.
+$("browserBtn").onclick=async function(){
+  if(busy){log("browser pressed while busy — ignored");return;}
+  log("browser pressed");
+  var ok=running||await refreshStatus();
+  busy=false;paint();
+  if(!ok){log("browser blocked: server not running",true);show("شغّل السيرفر أولاً.",false);return;}
+  var url=LOCAL+"/";
+  log("opening external browser (owner view): "+url);
   var opened=false;
   try{
-    if(window.Capacitor){
-      var Browser=null;
-      try{Browser=Capacitor.registerPlugin("Browser");}catch(e){}
-      if(Browser&&Browser.open){await Browser.open({url:url});opened=true;}
+    if(onAndroid()){
+      var B=null;
+      try{B=plugin("Browser");}catch(e){log("Browser plugin lookup: "+errName(e),true);}
+      if(B&&B.open){await B.open({url:url});opened=true;log("Browser.open resolved");}
+      else log("Browser plugin/open missing",true);
     }
-  }catch(e){}
-  if(!opened)location.href=url;
+  }catch(e){log("Browser.open threw: "+errName(e),true);}
+  if(!opened){
+    try{var w=window.open(url,"_system");if(w){opened=true;log("window.open _system ok");}}catch(e2){log("window.open threw: "+errName(e2),true);}
+  }
+  if(!opened){log("fallback: navigating WebView (bridge will be lost!)",true);location.href=url;}
 };
-
-/* ---------- شريط العنوان المصغر: b / beam / beam:2004 ---------- */
-function resolveAddr(t){
-  t=String(t||"").trim().toLowerCase().replace(/^https?:\/\//,"").replace(/\/+$/,"");
-  if(t===""||t==="b"||t==="beam"||t==="beam:2004"||t==="b:2004")return LOCAL;
-  if(/^\d+$/.test(t))return "http://127.0.0.1:"+t;
-  if(t.indexOf(":")<0&&/^[a-z0-9.-]+$/i.test(t)&&t.indexOf(".")<0)return "http://"+t+".local:"+PORT;
-  if(t.indexOf("://")<0)t="http://"+t;
-  // Guard: external hosts need explicit confirm (avoid open-redirect traps).
-  try{
-    var u=new URL(t),h=u.hostname;
-    var lan=/^(\d+\.\d+\.\d+\.\d+|localhost|.*\.local|beam|b)$/.test(h)||/^10\.|^192\.168\.|^172\.(1[6-9]|2\d|3[01])\./.test(h);
-    if(!lan&&!window.confirm("فتح عنوان خارجي؟\n"+h))return LOCAL;
-  }catch(e){}
-  return t;
-}
-$("goBtn").onclick=function(){location.href=resolveAddr($("addrInput").value);};
-$("addrInput").addEventListener("keydown",function(e){if(e.key==="Enter")location.href=resolveAddr($("addrInput").value);});
 
 /* ---------- بدء ---------- */
 (async function init(){
-  // Not inside the app (desktop preview)? behave as a status page.
-  var srv=beamSrv();
-  if(!srv){await refreshStatus();poll();return;}
-  if(await refreshStatus()){fgStart();wakeLockOn();}
-  poll();
+  try{
+    log("init: href="+location.href);
+    log("init: Capacitor="+(typeof window.Capacitor)+", platform="+capPlatform()+", registerPlugin="+((window.Capacitor&&typeof window.Capacitor.registerPlugin)||"missing"));
+    try{if(window.Capacitor&&typeof window.Capacitor.isPluginAvailable==="function")log("init: isPluginAvailable(BeamServer)="+window.Capacitor.isPluginAvailable("BeamServer"));}catch(e){log("init: isPluginAvailable threw: "+errName(e),true);}
+    paintDiag();
+    paint("جارٍ الفحص…");
+    var srv=beamSrv();
+    log("init: beamSrv "+(srv?("proxy obtained via "+(pluginPath["BeamServer"]||"?")):"NULL (no bridge)"));
+    await refreshStatus();
+    log("init: first probe running="+running);
+    await paintBgChain();
+    busy=false;paint();
+    if(!srv){show("افتح تطبيق Beam نفسه من أيقونته — الصفحة دي مفتوحة بدون الجسر الأصلي (راجع كارت التشخيص).",false);}
+    else if(running){fgStart();wakeLockOn();}
+    else{
+      // Auto-resume: the OS killed our process while the server was wanted
+      // (user sees the app "fresh" — restart silently instead of asking).
+      var w=await beamCall("wasWanted");
+      if(w&&w.wanted){
+        log("auto-resume: server was wanted before process death — restarting");
+        busy=true;paint("جارٍ الاستئناف…");
+        running=await doStart();
+        busy=false;paint();
+      }else{show("السيرفر متوقف — دوس تشغيل السيرفر.",true);}
+    }
+    poll();
+  }catch(e){log("init FATAL: "+errName(e),true);busy=false;paint();}
 })();
 var _wl=null;
 function wakeLockOn(){
   try{
     if("wakeLock" in navigator&&navigator.wakeLock.request){
-      navigator.wakeLock.request("screen").then(function(l){_wl=l;}).catch(function(){});
+      navigator.wakeLock.request("screen").then(function(l){_wl=l;log("wakelock on");}).catch(function(e){log("wakelock: "+errName(e),true);});
     }
-  }catch(e){}
+  }catch(e){log("wakeLockOn threw: "+errName(e),true);}
 }
+function wakeLockOff(){try{if(_wl&&_wl.release)_wl.release();}catch(e){}_wl=null;}
 document.addEventListener("visibilitychange",function(){
-  if(!document.hidden&&running)wakeLockOn();
+  if(document.hidden||!running)return;
+  wakeLockOn();
+  fgStart(); // re-assert the notice on return (failures log loudly)
 });
 </script>
 </body>

@@ -2,7 +2,14 @@
 /* ---------- ربط الأحداث ---------- */
 function autoRefresh(){
   if(!shouldPoll())return;
-  if(activeUploads>0||activeDownloads>0)return;  // لا تحديث أثناء نقل شغال
+  // Download progress rows live inside #files, so a re-render would wipe
+  // them — skip the files list only while downloading. Uploads live in
+  // #upList, so the download list must keep refreshing or new shares never
+  // appear (previously activeUploads froze the list for the whole upload).
+  if(activeDownloads>0){
+    bgIdleCheck();
+    return;
+  }
   if(document.querySelector('[data-armed="1"]'))return;  // لا تقاطع تأكيد حذف
   refresh();
   refreshSessions();
@@ -13,8 +20,8 @@ $("copyBtn2").onclick=function(){copyText(lastUrl||baseUrl());};
 var hcb=$("heroCopyBtn");if(hcb)hcb.onclick=function(){copyText(lastUrl||baseUrl());};
 $("qrWifiBtn").onclick=function(){qrMode="wifi";updateQR();};
 $("qrUrlBtn").onclick=function(){qrMode="url";updateQR();};
-function setUpMode(m){upMode=(m==="turbo")?"turbo":"reliable";$("modeRelUp").className=upMode==="reliable"?"active":"";$("modeTurboUp").className=upMode==="turbo"?"active":"";}
-function setDlMode(m){dlMode=(m==="turbo")?"turbo":"reliable";$("modeRelDl").className=dlMode==="reliable"?"active":"";$("modeTurboDl").className=dlMode==="turbo"?"active":"";}
+function setUpMode(m){upMode="reliable";try{$("modeRelUp").className="active";$("modeTurboUp").className="";}catch(e){}try{var s=$("upModeSeg");if(s)s.style.display="none";}catch(e2){}}
+function setDlMode(m){dlMode="reliable";try{$("modeRelDl").className="active";$("modeTurboDl").className="";}catch(e){}try{var s2=$("dlModeSeg");if(s2)s2.style.display="none";}catch(e2){}}
 $("modeRelUp").onclick=function(){setUpMode("reliable");};
 $("modeTurboUp").onclick=function(){setUpMode("turbo");};
 $("modeRelDl").onclick=function(){setDlMode("reliable");};
@@ -51,7 +58,7 @@ $("logClearBtn").onclick=function(){
   }).catch(function(){show(m,T("conn_fail"),false);});
 };
 /* حفظ تلقائي عند أي تعديل (بمنع ارتداد) — لا زر حفظ */
-["admSsid","admPass","cfgPort"].forEach(function(id){
+["admSsid","admPass","cfgPort","cfgTemp","wifiSsid","wifiPass"].forEach(function(id){
   var el=$(id);
   if(el&&!el.dataset.autobound){el.dataset.autobound="1";el.addEventListener("input",queueAutoSave);}
 });
@@ -61,7 +68,7 @@ bindStopBtn("srvStopTop","netMsg");
 $("picker").addEventListener("change",function(e){
   var files=Array.prototype.slice.call(e.target.files);
   var ad=window._adoptTarget||null;window._adoptTarget=null;
-  if(ad&&ad.id&&files.length===1)enqueueUpload(files[0],ad,ad.name,null);
+  if(ad&&ad.id&&files.length===1)enqueueUpload(files[0],ad.name,ad,null);
   else uploadFiles(files);
   e.target.value="";
 });
@@ -100,18 +107,61 @@ drop.addEventListener("drop",function(e){if(e.dataTransfer)collectDrop(e.dataTra
 initThemeBtn();
 initLang();
 idbCleanup();
-/* Mobile nav toggle (hamburger) */
+/* Mobile nav toggle (hamburger → ×, outside/Escape close, desktop cleanup) */
 try{
   var nt=$("navToggle"),mn=$("mainNav");
+  function setNav(open){
+    if(!nt||!mn)return;
+    mn.classList.toggle("open",!!open);
+    nt.setAttribute("aria-expanded",open?"true":"false");
+    try{nt.textContent=open?"×":"☰";}catch(e){}
+  }
   if(nt&&mn){
-    nt.onclick=function(){
-      var open=mn.classList.toggle("open");
-      nt.setAttribute("aria-expanded",open?"true":"false");
+    nt.onclick=function(e){
+      if(e&&e.stopPropagation){try{e.stopPropagation();}catch(e2){}}
+      setNav(!mn.classList.contains("open"));
     };
     mn.addEventListener("click",function(e){
-      if(e.target&&e.target.tagName==="A"){mn.classList.remove("open");nt.setAttribute("aria-expanded","false");}
+      if(e.target&&e.target.tagName==="A")setNav(false);
+    });
+    document.addEventListener("click",function(e){
+      if(!mn.classList.contains("open"))return;
+      var t=e.target;
+      if(t===mn||t===nt)return;
+      try{if(mn.contains(t)||(nt.contains&&nt.contains(t)))return;}catch(e2){}
+      setNav(false);
+    });
+    document.addEventListener("keydown",function(e){
+      if((e.key==="Escape"||e.key==="Esc")&&mn.classList.contains("open")){setNav(false);try{nt.focus();}catch(e3){}}
+    });
+    window.addEventListener("resize",function(){
+      try{
+        if(window.matchMedia&&matchMedia("(min-width:641px)").matches&&mn.classList.contains("open"))setNav(false);
+      }catch(e){}
     });
   }
+}catch(e){}
+/* Scroll-spy: highlight the nav link of the section in view */
+try{
+  (function(){
+    var nav=document.getElementById("mainNav");
+    if(!nav||!("IntersectionObserver" in window))return;
+    var links=nav.querySelectorAll('a[href^="#"]');
+    if(!links.length)return;
+    var byId={};
+    for(var i=0;i<links.length;i++){byId[links[i].getAttribute("href").slice(1)]=links[i];}
+    var obs=new IntersectionObserver(function(entries){
+      for(var k=0;k<entries.length;k++){
+        var en=entries[k];
+        if(!en.isIntersecting)continue;
+        var a=byId[en.target.id];
+        if(!a)continue;
+        for(var j=0;j<links.length;j++)links[j].classList.remove("active");
+        a.classList.add("active");
+      }
+    },{rootMargin:"-40% 0px -55% 0px"});
+    for(var id in byId){if(byId.hasOwnProperty(id)){var s=document.getElementById(id);if(s)obs.observe(s);}}
+  })();
 }catch(e){}
 /* Named polling timers so applyLimits() can reset them when /api/status
    reports different intervals (single source: the Go backend). */
@@ -126,3 +176,6 @@ function resetPolling(){
 }
 resetPolling();
 if(shouldPollClients())fetchClients();
+// Single fast+reliable mode: hide the old reliable/turbo switches on boot.
+try{setUpMode("reliable");}catch(e){}
+try{setDlMode("reliable");}catch(e2){}

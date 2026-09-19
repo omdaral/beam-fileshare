@@ -13,7 +13,7 @@ import (
 //go:embed web/index.html
 var indexHTML []byte
 
-//go:embed web/app/style.css web/app/config.js web/app/i18n.js web/app/api.js web/app/ui.js web/app/files.js web/app/upload.js web/app/upload_queue.js web/app/upload_zip.js web/app/download.js web/app/net.js web/app/app.js
+//go:embed web/app/style.css web/app/config.js web/app/i18n.js web/app/api.js web/app/ui.js web/app/files.js web/app/upload.js web/app/upload_queue.js web/app/upload_zip.js web/app/download.js web/app/shares.js web/app/net.js web/app/app.js
 var appFS embed.FS
 
 //go:embed web/qrcode-vendor.js web/cairo-400.woff2 web/cairo-700.woff2 web/cairo-900.woff2 web/icon-192.png web/icon-512.png web/apple-touch-icon.png
@@ -36,6 +36,7 @@ var appContentTypes = map[string]string{
 	"upload_queue.js": "application/javascript; charset=utf-8",
 	"upload_zip.js":   "application/javascript; charset=utf-8",
 	"download.js":     "application/javascript; charset=utf-8",
+	"shares.js":       "application/javascript; charset=utf-8",
 	"net.js":          "application/javascript; charset=utf-8",
 	"app.js":          "application/javascript; charset=utf-8",
 }
@@ -75,16 +76,23 @@ func serveIndexBody() []byte {
 // setSecurityHeaders adds hardening headers (XSS/clickjacking/MIME).
 // CSP allows self + inline (single-file UI without bundler) + blob:/data:
 // for chunk downloads; object/base restricted.
+// frame-ancestors also allows the on-phone Capacitor wrapper
+// (capacitor://localhost on Android AND iOS, ionic://localhost) so the
+// mobile launcher can embed the full UI in an iframe while keeping its
+// native bridge alive. HTTPS loopback variants are included because the
+// desktop defaults to self-signed HTTPS while the phone engine is HTTP.
+// X-Frame-Options is intentionally omitted: SAMEORIGIN would block that
+// same embedding in browsers that still honor it, and CSP frame-ancestors
+// already governs.
 func setSecurityHeaders(w http.ResponseWriter, isHTML bool) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.Header().Set("X-Frame-Options", "SAMEORIGIN")
 	w.Header().Set("Referrer-Policy", "same-origin")
 	if isHTML {
 		w.Header().Set("Content-Security-Policy",
 			"default-src 'self'; script-src 'self' 'unsafe-inline'; "+
 				"style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "+
 				"font-src 'self' data:; connect-src 'self'; media-src 'self' blob:; "+
-				"object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'")
+				"object-src 'none'; base-uri 'self'; frame-ancestors 'self' capacitor://localhost capacitor://* ionic://localhost ionic://* http://localhost http://localhost:* https://localhost https://localhost:* http://127.0.0.1:* https://127.0.0.1:* http://beam.local:* https://beam.local:*; form-action 'self'")
 	}
 }
 func writeHTML(w http.ResponseWriter, r *http.Request, body []byte) {

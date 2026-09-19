@@ -145,6 +145,22 @@ func TestFolderFlow(t *testing.T) {
 		t.Errorf("content-disposition = %q", cd)
 	}
 
+	// zip preflight: same checks as JSON, no streaming
+	st, j, _ = doJSON(t, "GET", ts.URL+"/download_zip?dir=Docs&preflight=1", nil, nil)
+	if st != 200 || j["ok"] != true {
+		t.Fatalf("preflight = %d %v", st, j)
+	}
+	if j["name"] != "Docs.zip" {
+		t.Errorf("preflight name = %v, want Docs.zip", j["name"])
+	}
+	if n, _ := j["files"].(float64); n != 1 {
+		t.Errorf("preflight files = %v, want 1", j["files"])
+	}
+	st, j, _ = doJSON(t, "GET", ts.URL+"/download_zip?dir=Nope&preflight=1", nil, nil)
+	if st != 404 {
+		t.Errorf("preflight missing dir = %d %v, want 404", st, j)
+	}
+
 	// recursive delete of the folder
 	st, j, _ = doJSON(t, "POST", ts.URL+"/delete",
 		map[string]interface{}{"dir": "Docs"}, nil)
@@ -357,6 +373,204 @@ func TestExtractZip(t *testing.T) {
 	if _, err := os.Stat(bad); err != nil {
 		t.Errorf("corrupt zip should be kept, err=%v", err)
 	}
+}
+
+func TestDownloadZipStore(t *testing.T) {
+	setupTestEnv(t)
+	ts := testServer()
+	defer ts.Close()
+
+	_ = os.MkdirAll(filepath.Join(SharedDir, "Docs", "sub"), 0755)
+	_ = os.WriteFile(filepath.Join(SharedDir, "Docs", "a.txt"), []byte("AAA"), 0644)
+	_ = os.WriteFile(filepath.Join(SharedDir, "Docs", "sub", "b.txt"), []byte("BBBB"), 0644)
+	_ = os.MkdirAll(filepath.Join(SharedDir, "Docs", "empty"), 0755)
+
+	// Default method is store: exact Content-Length, valid zip, empty-dir entry.
+	resp, err := http.Get(ts.URL + "/download_zip?dir=Docs")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != 200 {
+		t.Fatalf("store zip = %d", resp.StatusCode)
+	}
+	// NOTE: Go's HTTP client strips Content-Length from the Header map into
+	// resp.ContentLength — assert on that, not on Header.Get.
+	if resp.ContentLength != int64(len(body)) {
+		t.Errorf("Content-Length = %d, want %d", resp.ContentLength, len(body))
+	}
+	if cd := resp.Header.Get("Content-Disposition"); !strings.Contains(cd, `filename="Docs.zip"`) || !strings.Contains(cd, "filename*=") {
+		t.Errorf("content-disposition = %q", cd)
+	}
+	zr, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
+	if err != nil {
+		t.Fatalf("store zip unreadable: %v", err)
+	}
+	got := map[string]uint16{}
+	for _, f := range zr.File {
+		got[f.Name] = f.Method
+	}
+	for _, want := range []string{"a.txt", "sub/b.txt", "empty/"} {
+		m, ok := got[want]
+		if !ok {
+			t.Errorf("missing entry %q (have %v)", want, got)
+			continue
+		}
+		if m != zip.Store {
+			t.Errorf("entry %q method = %d, want Store", want, m)
+		}
+	}
+
+	// Explicit ?method=store behaves the same.
+	resp2, err := http.Get(ts.URL + "/download_zip?dir=Docs&method=store")
+	if err != nil {
+		t.Fatal(err)
+	}
+	zbody, _ := io.ReadAll(resp2.Body)
+	resp2.Body.Close()
+	if resp2.StatusCode != 200 || len(zbody) < 4 || string(zbody[:2]) != "PK" {
+		t.Fatalf("explicit store = %d (%d bytes)", resp2.StatusCode, len(zbody))
+	}
+	if resp2.ContentLength != int64(len(zbody)) {
+		t.Errorf("explicit store Content-Length = %d, want %d", resp2.ContentLength, len(zbody))
+	}
+
+	// ZIP-only policy: deflate on generate is rejected (STORE only) so
+	// every stock OS/phone opens the archive with no extra codec.
+	if st, _, _ := doJSON(t, "GET", ts.URL+"/download_zip?dir=Docs&method=deflate", nil, nil); st != 400 {
+		t.Errorf("deflate method = %d, want 400 zip_store_only", st)
+	}
+
+	// Unknown method is a clean 400 (generic validation key, no new semantics).
+	if st, _, _ := doJSON(t, "GET", ts.URL+"/download_zip?dir=Docs&method=rot13", nil, nil); st != 400 {
+		t.Errorf("bad method = %d, want 400", st)
+	}
+
+	// Preflight echoes the method.
+	st, j, _ := doJSON(t, "GET", ts.URL+"/download_zip?dir=Docs&preflight=1", nil, nil)
+	if st != 200 || j["method"] != "store" {
+		t.Errorf("preflight default = %d %v, want method store", st, j)
+	}
+	if st, _, _ := doJSON(t, "GET", ts.URL+"/download_zip?dir=Docs&preflight=1&method=deflate", nil, nil); st != 400 {
+		t.Errorf("preflight deflate = %d, want 400 zip_store_only", st)
+	}
+}
+
+func TestExtractZipStaging(t *testing.T) {
+	setupTestEnv(t)
+
+	// Existing tree collides with the zip top: placement must not overwrite.
+	_ = os.MkdirAll(filepath.Join(SharedDir, "Pack"), 0755)
+	_ = os.WriteFile(filepath.Join(SharedDir, "Pack", "a.txt"), []byte("OLD"), 0644)
+
+	zpath := filepath.Join(SharedDir, "Pack.zip")
+	f, err := os.Create(zpath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zw := zip.NewWriter(f)
+	fixed := time.Date(2026, 3, 4, 5, 6, 7, 0, time.UTC)
+	addHead := func(name string) {
+		fh := &zip.FileHeader{Name: name, Method: zip.Store}
+		fh.SetModTime(fixed)
+		w, err := zw.CreateHeader(fh)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := w.Write([]byte("NEW:" + name)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	addHead("Pack/a.txt")
+	addHead("Pack/new.txt")
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	f.Close()
+
+	n, top, err := extractZip(zpath)
+	if err != nil {
+		t.Fatalf("extract = %v", err)
+	}
+	if n != 2 {
+		t.Errorf("extract files = %d, want 2", n)
+	}
+	if top != "Pack (1)" {
+		t.Errorf("extract top = %q, want Pack (1)", top)
+	}
+	// Original tree untouched (non-overwrite placement).
+	if got, _ := os.ReadFile(filepath.Join(SharedDir, "Pack", "a.txt")); string(got) != "OLD" {
+		t.Errorf("Pack/a.txt = %q, want OLD", got)
+	}
+	if got, _ := os.ReadFile(filepath.Join(SharedDir, "Pack (1)", "a.txt")); string(got) != "NEW:Pack/a.txt" {
+		t.Errorf("Pack (1)/a.txt = %q", got)
+	}
+	// Entry modtime preserved (zip ext-timestamp is 1s precise).
+	if st, err := os.Stat(filepath.Join(SharedDir, "Pack (1)", "new.txt")); err != nil {
+		t.Errorf("placed new.txt missing: %v", err)
+	} else if !st.ModTime().Equal(fixed) {
+		t.Errorf("new.txt mtime = %v, want %v", st.ModTime(), fixed)
+	}
+	// No staging leftovers next to the tree.
+	rd, _ := os.ReadDir(SharedDir)
+	for _, e := range rd {
+		if strings.HasPrefix(e.Name(), ".extract-") {
+			t.Errorf("staging leftover: %q", e.Name())
+		}
+	}
+}
+
+func TestExtractZipCapsAreErrors(t *testing.T) {
+	setupTestEnv(t)
+
+	oldFiles, oldBytes := maxZipFiles, maxZipBytes
+	defer func() { maxZipFiles, maxZipBytes = oldFiles, oldBytes }()
+
+	mkzip := func(names ...string) string {
+		p := filepath.Join(SharedDir, "caps.zip")
+		_ = os.Remove(p)
+		f, err := os.Create(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		zw := zip.NewWriter(f)
+		for _, name := range names {
+			w, err := zw.Create(name)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, _ = w.Write([]byte("0123456789"))
+		}
+		if err := zw.Close(); err != nil {
+			t.Fatal(err)
+		}
+		f.Close()
+		return p
+	}
+
+	// maxFiles is an error, not a silent break-with-success.
+	maxZipFiles, maxZipBytes = 2, oldBytes
+	if _, _, err := extractZip(mkzip("a.txt", "b.txt", "c.txt")); err != errTooMany {
+		t.Errorf("over-files extract = %v, want too many files", err)
+	}
+
+	// A single file over the byte cap is an error too (live guard, kept zip).
+	maxZipFiles, maxZipBytes = oldFiles, 8
+	zp := mkzip("big.txt")
+	if _, _, err := extractZip(zp); err != errTooBig {
+		t.Errorf("over-bytes extract = %v, want too big", err)
+	}
+	if _, err := os.Stat(filepath.Join(SharedDir, "big.txt")); !os.IsNotExist(err) {
+		t.Errorf("over-cap file must not land in the tree")
+	}
+	rd, _ := os.ReadDir(SharedDir)
+	for _, e := range rd {
+		if strings.HasPrefix(e.Name(), ".extract-") {
+			t.Errorf("staging leftover: %q", e.Name())
+		}
+	}
+	_ = os.Remove(zp)
 }
 
 func TestExtractViaUpload(t *testing.T) {

@@ -3,6 +3,8 @@ package beamcore
 import (
 	"encoding/json"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -97,7 +99,7 @@ func handleConfigPost(w http.ResponseWriter, r *http.Request) {
 			fail(w, r, 400, "max_not_number")
 			return
 		}
-		if mf < 1 || mf > 102400 {
+		if mf < 0 || mf > 102400 {
 			fail(w, r, 400, "max_range")
 			return
 		}
@@ -122,6 +124,34 @@ func handleConfigPost(w http.ResponseWriter, r *http.Request) {
 			c.WifiOpen = b
 		}
 	}
+	// Manual Wi-Fi join credentials (hybrid with auto-detect): shown in the
+	// QR when the OS hides the PSK (needs root/admin). Owner-only.
+	if raw, ok := data["wifi_ssid"]; ok {
+		if s, ok := raw.(string); ok && strings.TrimSpace(s) != "" {
+			c.WifiSSID = strings.TrimSpace(s)
+			c.SSID = c.WifiSSID
+		}
+	}
+	if raw, ok := data["wifi_password"]; ok {
+		if s, ok := raw.(string); ok {
+			c.WifiPassword = s
+			c.HotspotPassword = s
+		}
+	}
+	if raw, ok := data["wifi_security"]; ok {
+		if s, ok := raw.(string); ok {
+			s = strings.ToLower(strings.TrimSpace(s))
+			if s == "open" || s == "wpa" || s == "nopass" {
+				if s == "nopass" {
+					s = "open"
+				}
+				c.WifiSecurity = strings.ToUpper(s)
+				if s == "open" {
+					c.WifiSecurity = "open"
+				}
+			}
+		}
+	}
 	if raw, ok := data["default_lang"]; ok {
 		s, ok := raw.(string)
 		if !ok {
@@ -135,9 +165,49 @@ func handleConfigPost(w http.ResponseWriter, r *http.Request) {
 		}
 		c.DefaultLang = s
 	}
+	// temp_dir is session-only like every other setting: changing it MOVES
+	// nothing — bytes already in the old temp stay there, and all new
+	// sessions/retained guest bytes go to the new dir from now on.
+	if raw, ok := data["temp_dir"]; ok {
+		s, ok := raw.(string)
+		if !ok || strings.TrimSpace(s) == "" {
+			sendJSON(w, r, 400, map[string]interface{}{
+				"error": tr(reqLang(r), "temp_bad_path"), "code": "temp_bad_path"})
+			return
+		}
+		s = filepath.Clean(strings.TrimSpace(s))
+		if !filepath.IsAbs(s) {
+			sendJSON(w, r, 400, map[string]interface{}{
+				"error": tr(reqLang(r), "temp_need_abs"), "code": "temp_need_abs"})
+			return
+		}
+		if shareBlocked(s) {
+			sendJSON(w, r, 403, map[string]interface{}{
+				"error": tr(reqLang(r), "share_blocked"), "code": "share_blocked"})
+			return
+		}
+		if err := os.MkdirAll(s, 0755); err != nil {
+			sendJSON(w, r, 500, map[string]interface{}{
+				"error": tr(reqLang(r), "temp_bad_path"), "code": "temp_bad_path"})
+			return
+		}
+		c.TempDir = s
+	}
 	if err := saveConfig(c); err != nil {
 		fail(w, r, 500, "config_save_fail")
 		return
+	}
+	// Apply a temp_dir change to the live globals (session-only, like all
+	// settings). Nothing is MOVED: old temp bytes stay where they are.
+	if _, ok := data["temp_dir"]; ok {
+		CfgMu.RLock()
+		nd := Cfg.TempDir
+		CfgMu.RUnlock()
+		if nd != "" {
+			TempDir = nd
+			SharedDir = nd // deprecated alias stays pointed at temp
+			_ = os.MkdirAll(nd, 0755)
+		}
 	}
 	writeLog(clientIP(r), "config_save", "need_restart="+strconv.FormatBool(needRestart))
 	msg := tr(reqLang(r), "config_saved")

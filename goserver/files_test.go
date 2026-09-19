@@ -6,24 +6,29 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
 
 // setupTestEnv points all globals at temp dirs (mirrors test_*.py setup).
-// Beam keeps no side files: settings + log live in memory, shares in tmp.
+// Beam keeps no side files: settings + log + registry live in memory, the
+// temp dir (uploads staging, retained guest bytes) lives under tmp.
 func setupTestEnv(t *testing.T) string {
 	t.Helper()
 	tmp := t.TempDir()
-	SharedDir = filepath.Join(tmp, "Shared")
-	if err := os.MkdirAll(SharedDir, 0755); err != nil {
+	TempDir = filepath.Join(tmp, "Beam-Temp")
+	if err := os.MkdirAll(TempDir, 0755); err != nil {
 		t.Fatal(err)
 	}
-	beamHomeOverride = tmp // SharedDefaultDir() resolves under tmp in tests
+	SharedDir = TempDir // deprecated alias stays pointed at temp
+	beamHomeOverride = tmp // TempDefaultDir() resolves under tmp in tests
 	Cfg = defaultConfig()
+	Cfg.TempDir = TempDir
 	Cfg.Port = 18793
 	Cfg.WifiPassword = "Share12345"
 	Cfg.HotspotPassword = "Share12345"
 	Cfg.NetMode = "lan"
 	Cfg.Mode = "lan"
+	resetRegistryState()
 	clearLog()
 	TouchActivity()
 	NSMu.Lock()
@@ -45,6 +50,14 @@ func setupTestEnv(t *testing.T) string {
 	netcapMu.Lock()
 	netcapAt = 0
 	netcapMu.Unlock()
+	// Freeze Wi-Fi auto-detect: tests must never depend on the host's real
+	// Wi-Fi (nmcli on the build machine leaks SSIDs like "micro" into
+	// /api/status). Fresh "none" cache => effectiveWifi() falls back to the
+	// deterministic manual Cfg values set above.
+	wifiCacheMu.Lock()
+	wifiCache = WifiInfo{Source: "none"}
+	wifiCacheAt = time.Now()
+	wifiCacheMu.Unlock()
 	ServerPort = 18793
 	AppVersion = "1.2.1"
 	return tmp

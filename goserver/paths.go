@@ -61,24 +61,30 @@ func xdgDownloadDir(home string) string {
 // beamHomeOverride redirects ~/Downloads in tests (never set in prod).
 var beamHomeOverride = ""
 
-// SharedDefaultDir is the single well-known share folder: <Downloads>/Beam.
-// It keeps the user's files visible in a place they already know instead
-// of a hidden folder next to the binary (no bloatware behavior).
-// Falls back to Beam-Shared next to the binary when home is unknown.
-func SharedDefaultDir() string {
+// TempDefaultDir is the single well-known temp folder:
+// <Downloads>/Beam-Temp (visible: NO dot prefix so the user can inspect
+// retained guest bytes). It is the ONLY dir the server auto-creates.
+// Falls back to Beam-Temp next to the binary when home is unknown.
+func TempDefaultDir() string {
 	if beamHomeOverride != "" {
-		return filepath.Join(beamHomeOverride, "Downloads", "Beam")
+		return filepath.Join(beamHomeOverride, "Downloads", "Beam-Temp")
 	}
 	if d := downloadsDir(); d != "" {
-		return filepath.Join(d, "Beam")
+		return filepath.Join(d, "Beam-Temp")
 	}
-	return filepath.Join(BaseDir, "Beam-Shared")
+	return filepath.Join(BaseDir, "Beam-Temp")
 }
 
-// MigrateLegacyShared moves files from the old ./Shared folder next to the
-// binary (pre-v1.6 layout) into the new Downloads/Beam folder, once.
-// Existing names are never overwritten (a " (n)" suffix is added).
-// The old folder is left in place when empty or moved-from.
+// SharedDefaultDir is a deprecated alias for TempDefaultDir (kept so old
+// callers/tests keep compiling — the ~/Downloads/Beam share folder no
+// longer exists and is never created).
+func SharedDefaultDir() string {
+	return TempDefaultDir()
+}
+
+// MigrateLegacyShared is DEPRECATED and no longer called at startup: the
+// ~/Downloads/Beam folder and the ./Shared migration are gone (the only
+// auto-created dir is the temp dir). Kept so external callers compile.
 func MigrateLegacyShared(newDir string) {
 	old := filepath.Join(BaseDir, "Shared")
 	if samePath(old, newDir) {

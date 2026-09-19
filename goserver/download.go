@@ -93,34 +93,67 @@ func handleDownload(w http.ResponseWriter, r *http.Request) {
 	size := st.Size()
 	ctype := mimeByName(name)
 	disp := "attachment; filename*=UTF-8''" + percentEncode(filepath.Base(name))
+	etag := "\"" + strconv.FormatInt(size, 10) + "-" + strconv.FormatInt(int64(st.ModTime().Unix()), 10) + "\""
+	lastMod := st.ModTime().UTC().Format(http.TimeFormat)
+	// Conditional GET: revalidation without re-download (RFC 7232).
+	// If-None-Match wins over If-Modified-Since.
+	if etagMatches(r, etag) || modifiedSinceAllowsNotModified(r, lastMod) {
+		f.Close()
+		notModified(w, etag, lastMod)
+		return
+	}
 	if r.Method == "HEAD" {
 		f.Close()
 		w.Header().Set("Content-Type", ctype)
 		w.Header().Set("Content-Length", strconv.FormatInt(size, 10))
 		w.Header().Set("Content-Disposition", disp)
 		w.Header().Set("Accept-Ranges", "bytes")
-		w.Header().Set("ETag", "\""+strconv.FormatInt(size, 10)+"-"+strconv.FormatInt(int64(st.ModTime().Unix()), 10)+"\"")
+		w.Header().Set("ETag", etag)
+		w.Header().Set("Last-Modified", lastMod)
 		w.WriteHeader(200)
 		return
 	}
-	start, end, partial := parseRange(r.Header.Get("Range"), size)
+	rawRange := r.Header.Get("Range")
+	start, end, partial := parseRange(rawRange, size)
+	// Stale If-Range validator: fall back to full 200 instead of a
+	// mismatched 206 (resume-safe).
+	if partial && !ifRangeAllowsPartial(r, etag, lastMod) {
+		partial = false
+		start, end = 0, size-1
+	}
+	if strings.TrimSpace(rawRange) != "" && !partial && r.Header.Get("If-Range") == "" {
+		// A Range header was present but unsatisfiable (start>end,
+		// past EOF, or unparsable): 416, not a silent 200 full body.
+		w.Header().Set("Content-Range", "bytes */"+strconv.FormatInt(size, 10))
+		f.Close()
+		fail(w, r, 416, "up_range_invalid")
+		return
+	}
 	if partial {
 		w.Header().Set("Content-Type", ctype)
 		w.Header().Set("Content-Length", strconv.FormatInt(end-start+1, 10))
 		w.Header().Set("Content-Range", "bytes "+strconv.FormatInt(start, 10)+"-"+strconv.FormatInt(end, 10)+"/"+strconv.FormatInt(size, 10))
 		w.Header().Set("Accept-Ranges", "bytes")
 		w.Header().Set("Content-Disposition", disp)
+		w.Header().Set("ETag", etag)
+		w.Header().Set("Last-Modified", lastMod)
 		w.WriteHeader(206)
 	} else {
 		w.Header().Set("Content-Type", ctype)
 		w.Header().Set("Content-Length", strconv.FormatInt(size, 10))
 		w.Header().Set("Accept-Ranges", "bytes")
 		w.Header().Set("Content-Disposition", disp)
+		w.Header().Set("ETag", etag)
+		w.Header().Set("Last-Modified", lastMod)
 		w.WriteHeader(200)
 	}
 	t0 := nowNano()
 	var sent int64
 	defer f.Close()
+	if !acquireDownloadSlot(r) {
+		return
+	}
+	defer releaseDownloadSlot()
 	if partial {
 		_, _ = f.Seek(start, io.SeekStart)
 		sent = streamCopy(w, f, end-start+1)
@@ -141,26 +174,18 @@ func handleDownload(w http.ResponseWriter, r *http.Request) {
 		name+" ("+strconv.FormatInt(sent, 10)+"b, "+ftoa1(dt)+"s, "+fmtSpeed(sent, dt)+")")
 }
 
-// streamCopy copies up to n bytes in 1MB chunks; write errors (gone client)
-// stop the copy silently like BrokenPipeError handling.
+// streamCopy copies up to n bytes using a pooled buffer via io.CopyBuffer,
+// which lets the runtime use sendfile(2) (zero-copy) for file→socket paths.
+// Write errors (gone client) stop the copy silently like BrokenPipe handling.
 func streamCopy(w http.ResponseWriter, f *os.File, n int64) int64 {
-	buf := make([]byte, copyBufSize)
-	var sent int64
-	for sent < n {
-		want := int64(len(buf))
-		if n-sent < want {
-			want = n - sent
-		}
-		nr, err := f.Read(buf[:want])
-		if nr > 0 {
-			if _, werr := w.Write(buf[:nr]); werr != nil {
-				return sent
-			}
-			sent += int64(nr)
-		}
-		if err != nil {
-			break
-		}
+	if n <= 0 {
+		return 0
+	}
+	buf := getCopyBuf()
+	defer putCopyBuf(buf)
+	sent, _ := io.CopyBuffer(w, io.LimitReader(f, n), buf)
+	if sent < 0 {
+		return 0
 	}
 	return sent
 }

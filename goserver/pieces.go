@@ -63,9 +63,10 @@ func rangeAdd(m *sessionMeta, s, e int64) {
 			merged = append(merged, r)
 		}
 	}
-	if len(merged) > 512 {
-		merged = merged[len(merged)-512:]
-	}
+	// Never drop covered bytes: the merged list is already minimal
+	// (overlaps coalesced), so every entry is live accounting. Capping
+	// the list (e.g. keeping only the last N) forgets early ranges,
+	// undercounts received bytes and forces needless re-downloads.
 	m.Ranges = merged
 }
 func rangeCover(m *sessionMeta, s, e int64) bool {
@@ -149,7 +150,8 @@ func verifyPiece(uid string, m *sessionMeta, index int) bool {
 	}
 	h := sha256.New()
 	remaining := e - s
-	buf := make([]byte, copyBufSize)
+	buf := getCopyBuf()
+	defer putCopyBuf(buf)
 	for remaining > 0 {
 		want := remaining
 		if want > int64(len(buf)) {
@@ -180,7 +182,8 @@ func zeroPiece(uid string, m *sessionMeta, index int) {
 		return
 	}
 	remaining := e - s
-	zeros := make([]byte, copyBufSize)
+	zeros := getCopyBuf()
+	defer putCopyBuf(zeros)
 	for remaining > 0 {
 		n := remaining
 		if n > int64(len(zeros)) {

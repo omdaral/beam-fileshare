@@ -1,12 +1,27 @@
-# Beam — full release build on version tags (e.g. v1.6.0 must match VERSION).
-# Takes over the *build* half of publish.sh: binaries + portables + system
-# packages + Android APK, all attached to a GitHub Release. Installing on
-# your own machine (publish.sh step 10) stays local: download + ./install.sh.
+# Beam — full release build that mirrors publish.sh:
+#   1. capabilities report     (step 1)
+#   2. vet + tests             (step 2)
+#   3. icons from identity     (step 3)
+#   4. all 6 platform binaries (step 4)
+#   5. portable bundles        (step 5)
+#   6. system packages         (step 6)
+#   7. unified manifest        (step 7, regenerated in finalize to include the APK)
+#   8. launchers               (step 8, generated for validation only)
+#   9. Android APK             (step 9)
+#   10. live smoke test        (step 10 — runs the built binary on the runner)
+# Runs on version tags (v1.6.0 must match VERSION) and publishes a Release,
+# or manually from the Actions tab (Run workflow) to build + verify and leave
+# the outputs as downloadable run artifacts. On tags the driver is exactly the
+# publish.sh flow; the local install/run-back rollback step (10) is replaced
+# by a live smoke test against the built binary.
+# Failure semantics match publish.sh: vet/tests/icons/binaries/smoke-test are
+# fatal; portables/packages/manifest/launchers/APK only warn and continue.
 name: Release
 
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -19,7 +34,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Tag must match VERSION file
+      - name: Tag must match VERSION file (skipped for manual runs)
+        if: github.ref_type == 'tag'
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
           VER="$(tr -d ' \t\r\n' < VERSION)"
@@ -36,7 +52,19 @@ jobs:
       - name: Download Go modules
         run: go -C goserver mod download
 
-      - name: Vet + tests
+      - name: 1/10 Capabilities report
+        run: |
+          echo "  Go: $(command -v go && go version || echo missing)"
+          echo "  python3: $(command -v python3 || echo missing)"
+          echo "  dpkg-deb: $(command -v dpkg-deb || echo missing)"
+          echo "  mksquashfs (AppImage): $(command -v mksquashfs || echo missing)"
+          echo "  rpmbuild (Fedora rpm): $(command -v rpmbuild || echo missing)"
+          echo "  desktop-file-validate: $(command -v desktop-file-validate || echo missing)"
+          echo "  java: $(command -v java && java -version 2>&1 | head -1 || echo missing)"
+          echo "  node: $(command -v node && node -v || echo missing)"
+          echo "  gomobile: $(command -v gomobile || echo missing)"
+
+      - name: 2/10 Vet + tests
         run: |
           go -C goserver vet ./...
           go -C goserver test -count=1 ./...
@@ -44,7 +72,7 @@ jobs:
       - name: Install packaging tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq squashfs-tools rpm file
+          sudo apt-get install -y -qq squashfs-tools rpm file desktop-file-utils
           pip3 install --quiet pillow
 
       - name: Fetch AppImage runtimes (gitignored locally)
@@ -54,26 +82,71 @@ jobs:
           curl -sSL -o packaging/tools/runtime-aarch64 https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-aarch64
           ls -la packaging/tools/
 
-      - name: Regenerate icons
+      - name: 3/10 Regenerate icons
         run: python3 packaging/render-icons.py
 
-      - name: Build all platforms
+      - name: 4/10 Build all platforms
         run: ./build-all.sh
 
-      - name: Portable bundles
-        run: ./packaging/build-portables.sh
+      # Non-fatal like publish.sh step 5 (a note there, not a failure).
+      - name: 5/10 Portable bundles
+        run: ./packaging/build-portables.sh || echo "::warning::portable bundles failed — continuing like publish.sh"
 
-      - name: System packages (deb / AppImage / rpm)
-        run: ./packaging/build-packages.sh all
+      # Non-fatal like publish.sh step 6: a missing tool or broken package is
+      # reported per package, the rest of the publish continues.
+      - name: 6/10 System packages (deb / AppImage / rpm)
+        run: |
+          ./packaging/build-packages.sh all || echo "::warning::some system packages failed or were skipped — continuing like publish.sh"
+          echo "  deb:      $(ls dist/debian/*.deb 2>/dev/null | wc -l) file(s)"
+          echo "  appimage: $(ls dist/appimage/*.AppImage 2>/dev/null | wc -l) file(s)"
+          echo "  rpm:      $(ls dist/rpm/*.rpm 2>/dev/null | wc -l) file(s)"
 
-      - name: Manifest + checksums
-        run: python3 packaging/manifest.py "$(cat VERSION)"
+      # Non-fatal like publish.sh step 7; finalize regenerates it anyway.
+      - name: 7/10 Manifest + checksums
+        run: python3 packaging/manifest.py "$(cat VERSION)" || echo "::warning::manifest generation failed — finalize will retry over merged artifacts"
+
+      # Non-fatal like publish.sh step 8 (launcher issues are notes there).
+      - name: 8/10 Generate launchers (validation only, no install)
+        run: |
+          ./install.sh || echo "::warning::launcher generation had issues — continuing"
+          desktop-file-validate Beam.desktop Publish.desktop || echo "::warning::desktop-file-validate reported notes"
+
+      - name: 10/10 Live smoke test
+        run: |
+          set -e
+          VER="$(tr -d ' \t\r\n' < VERSION)"
+          BIN="dist/linux/amd64/$VER/Beam"
+          test -x "$BIN" || { echo "binary missing: $BIN"; exit 1; }
+          "$BIN" --port 2004 --no-browser >/tmp/beam-server.log 2>&1 &
+          SRV=$!
+          trap 'kill $SRV 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            curl -s -o /dev/null --max-time 2 http://127.0.0.1:2004/health && break
+            sleep 0.5
+            [ "$i" = 30 ] && { echo "server never became healthy:"; cat /tmp/beam-server.log; exit 1; }
+          done
+          curl -s --max-time 8 http://127.0.0.1:2004/admin -o /tmp/beam_pub.html
+          grep -q "Beam" /tmp/beam_pub.html || { echo "admin page lost identity"; exit 1; }
+          grep -q "srvStopTop" /tmp/beam_pub.html || { echo "stop button missing"; exit 1; }
+          grep -q "unlockCard\|QRmini" /tmp/beam_pub.html && { echo "old system leftovers present"; exit 1; }
+          curl -s --max-time 8 http://127.0.0.1:2004/vendor/qrcode.js -o /dev/null || { echo "qrcode.js unserved"; exit 1; }
+          curl -s --max-time 8 http://127.0.0.1:2004/app/app.js -o /dev/null || { echo "app.js unserved"; exit 1; }
+          curl -s --max-time 8 http://127.0.0.1:2004/app/style.css -o /dev/null || { echo "style.css unserved"; exit 1; }
+          LIVEVER="$(curl -s --max-time 5 http://127.0.0.1:2004/api/status | grep -o '"version":"[^"]*"' | head -1 | cut -d'"' -f4)"
+          test "$LIVEVER" = "$VER" || { echo "live version $LIVEVER != $VER"; exit 1; }
+          curl -s --max-time 5 -X POST http://127.0.0.1:2004/api/server/stop -H 'Content-Type: application/json' -d '{}' -o /dev/null
+          kill $SRV 2>/dev/null || true
+          rm -f /tmp/beam_pub.html
+          echo "smoke test OK: server healthy, identity + version $VER verified"
 
       - name: Upload desktop artifacts
         uses: actions/upload-artifact@v4
         with:
           name: desktop
           path: |
+            dist/linux/
+            dist/windows/
+            dist/darwin/
             dist/portables/
             dist/debian/
             dist/appimage/
@@ -128,18 +201,68 @@ jobs:
           echo "NDK: $NDK_DIR"
           GOPROXY="https://proxy.golang.org,direct" gomobile init -ndk "$NDK_DIR"
 
-      - name: Build APK
-        run: ./mobile/build-apk.sh
+      # Non-fatal like publish.sh step 9: without a working Android toolchain
+      # the APK is skipped with a warning and the rest of the release goes on.
+      - name: 9/10 Build APK
+        run: ./mobile/build-apk.sh || echo "::warning::APK build failed — continuing without APK like publish.sh"
 
       - name: Upload APK artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: apk
           path: dist/mobile/*.apk
+          if-no-files-found: warn
+
+  finalize:
+    needs: [build, android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-files
+          merge-multiple: true
+
+      - name: Regenerate manifest over merged artifacts (includes the APK)
+        run: |
+          # upload-artifact v4 uses the least common ancestor of the desktop
+          # paths ("dist/") as the artifact root, so files arrive as
+          # linux/…, debian/…, SHA256SUMS, … The APK upload is a single
+          # wildcard pattern, so it flattens to a bare Beam-*.apk here.
+          VER="$(tr -d ' \t\r\n' < VERSION)"
+          mkdir -p dist/mobile
+          shopt -s nullglob
+          for apk in release-files/*.apk; do mv "$apk" dist/mobile/; done
+          cp -r release-files/. dist/
+          python3 packaging/manifest.py "$VER"
+
+      - name: Delivery report (mirrors the publish.sh final table)
+        run: |
+          echo "========== Beam delivery report =========="
+          echo "  binaries:  $(find dist/linux dist/windows dist/darwin -type f 2>/dev/null | wc -l) files"
+          echo "  portables: $(find dist/portables -type f 2>/dev/null | wc -l) files"
+          echo "  deb:       $(ls dist/debian/*.deb 2>/dev/null | wc -l) file(s)"
+          echo "  appimage:  $(ls dist/appimage/*.AppImage 2>/dev/null | wc -l) file(s)"
+          echo "  rpm:       $(ls dist/rpm/*.rpm 2>/dev/null | wc -l) file(s)"
+          echo "  apk:       $(ls dist/mobile/*.apk 2>/dev/null | wc -l) file(s)"
+          echo "  manifest entries: $(python3 -c "import json;print(len(json.load(open('dist/MANIFEST.json'))['artifacts']))" 2>/dev/null || echo ?)"
+          echo "=========================================="
+
+      - name: Upload merged artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: dist
           if-no-files-found: error
 
   release:
-    needs: [build, android]
+    # GitHub Releases need a tag; a manual run still builds + verifies and
+    # leaves everything downloadable from the run's Artifacts section.
+    if: github.ref_type == 'tag'
+    needs: [finalize]
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts

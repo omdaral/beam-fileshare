@@ -8,6 +8,15 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"sync"
+)
+
+// hashFlight coalesces concurrent full-file hashes of the same path
+// (singleflight with stdlib sync only): the first caller hashes while the
+// rest wait, then double-check the JSON cache the winner populated.
+var (
+	hashFlightMu sync.Mutex
+	hashFlight   = map[string]chan struct{}{}
 )
 
 func fullSHA256(path string) (string, error) {
@@ -17,7 +26,8 @@ func fullSHA256(path string) (string, error) {
 	}
 	defer f.Close()
 	h := sha256.New()
-	buf := make([]byte, copyBufSize)
+	buf := getCopyBuf()
+	defer putCopyBuf(buf)
 	for {
 		nr, err := f.Read(buf)
 		if nr > 0 {
@@ -39,47 +49,68 @@ type hashEntry struct {
 // cachedFileHash returns cached sha256, invalidated by size/mtime change.
 func cachedFileHash(name, fpath string, size int64, mtime float64) (string, error) {
 	cachePath := filepath.Join(SharedDir, hashcacheName)
-	uploadLock.Lock()
-	cache := map[string]hashEntry{}
-	if data, err := os.ReadFile(cachePath); err == nil {
-		_ = json.Unmarshal(data, &cache)
-	}
-	if ent, ok := cache[name]; ok && ent.Size == size && ent.Mtime == mtime && ent.Sha256 != "" {
+	for {
+		uploadLock.Lock()
+		cache := map[string]hashEntry{}
+		if data, err := os.ReadFile(cachePath); err == nil {
+			_ = json.Unmarshal(data, &cache)
+		}
+		if ent, ok := cache[name]; ok && ent.Size == size && ent.Mtime == mtime && ent.Sha256 != "" {
+			uploadLock.Unlock()
+			return ent.Sha256, nil
+		}
 		uploadLock.Unlock()
-		return ent.Sha256, nil
-	}
-	uploadLock.Unlock()
 
-	digest, err := fullSHA256(fpath)
-	if err != nil {
-		return "", err
-	}
-	uploadLock.Lock()
-	defer uploadLock.Unlock()
-	cache2 := map[string]hashEntry{}
-	if data, err := os.ReadFile(cachePath); err == nil {
-		_ = json.Unmarshal(data, &cache2)
-	}
-	cache2[name] = hashEntry{Size: size, Mtime: mtime, Sha256: digest}
-	if len(cache2) > hashCacheMax {
-		// Deterministic eviction (oldest mtime first), not random map order.
-		type kv struct {
-			k string
-			m float64
+		hashFlightMu.Lock()
+		if ch, ok := hashFlight[fpath]; ok {
+			hashFlightMu.Unlock()
+			<-ch
+			continue // winner populated the cache (or failed): re-check
 		}
-		all := make([]kv, 0, len(cache2))
-		for k, v := range cache2 {
-			all = append(all, kv{k, v.Mtime})
+		done := make(chan struct{})
+		hashFlight[fpath] = done
+		hashFlightMu.Unlock()
+
+		digest, herr := fullSHA256(fpath)
+
+		if herr == nil {
+			uploadLock.Lock()
+			cache2 := map[string]hashEntry{}
+			if data, err := os.ReadFile(cachePath); err == nil {
+				_ = json.Unmarshal(data, &cache2)
+			}
+			cache2[name] = hashEntry{Size: size, Mtime: mtime, Sha256: digest}
+			if len(cache2) > hashCacheMax {
+				// Deterministic eviction (oldest mtime first), not random map order.
+				type kv struct {
+					k string
+					m float64
+				}
+				all := make([]kv, 0, len(cache2))
+				for k, v := range cache2 {
+					all = append(all, kv{k, v.Mtime})
+				}
+				sort.Slice(all, func(i, j int) bool { return all[i].m < all[j].m })
+				for i := 0; i < len(all)-hashCacheMax; i++ {
+					delete(cache2, all[i].k)
+				}
+			}
+			if data, err := json.Marshal(cache2); err == nil {
+				_ = os.WriteFile(cachePath, data, 0644)
+			}
+			uploadLock.Unlock()
 		}
-		sort.Slice(all, func(i, j int) bool { return all[i].m < all[j].m })
-		for i := 0; i < len(all)-hashCacheMax; i++ {
-			delete(cache2, all[i].k)
+
+		hashFlightMu.Lock()
+		delete(hashFlight, fpath)
+		close(done)
+		hashFlightMu.Unlock()
+
+		if herr != nil {
+			return "", herr
 		}
+		return digest, nil
 	}
-	if data, err := json.Marshal(cache2); err == nil {
-		_ = os.WriteFile(cachePath, data, 0644)
-	}
-	return digest, nil
 }
 func invalidateFileHash(name string) {
 	invalidateFileHashIn(SharedDir, name)

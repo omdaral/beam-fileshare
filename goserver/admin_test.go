@@ -150,9 +150,15 @@ func TestAdminFlow(t *testing.T) {
 	if st != 400 {
 		t.Errorf("bad port = %d", st)
 	}
-	st, _, _ = doJSON(t, "POST", ts.URL+"/api/config", map[string]interface{}{"max_file_mb": 0}, nil)
+	st, _, _ = doJSON(t, "POST", ts.URL+"/api/config", map[string]interface{}{"max_file_mb": -1}, nil)
 	if st != 400 {
 		t.Errorf("bad max = %d", st)
+	}
+	// 0 = unlimited (no per-file cap).
+	st, j, _ = doJSON(t, "POST", ts.URL+"/api/config",
+		map[string]interface{}{"max_file_mb": 0}, nil)
+	if st != 200 {
+		t.Fatalf("unlimited max = %d %v", st, j)
 	}
 	st, j, _ = doJSON(t, "POST", ts.URL+"/api/config",
 		map[string]interface{}{"port": ServerPort, "max_file_mb": 100}, nil)

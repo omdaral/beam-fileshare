@@ -2,7 +2,6 @@ package beamcore
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 )
 
@@ -85,7 +84,7 @@ func startLan(w http.ResponseWriter, r *http.Request, p *netStartParams, cip str
 	if len(ips) > 0 {
 		lip = ips[0]
 	}
-	url := "http://" + lip + ":" + strconv.Itoa(ServerPort)
+	url := BaseURL(lip, ServerPort)
 	writeLog(cip, "net_start", "lan "+p.ssid)
 	sendJSON(w, r, 200, map[string]interface{}{"ok": true, "mode": "lan",
 		"msg":  tr(reqLang(r), "net_lan_ok", url),

@@ -2,6 +2,8 @@ package beamcore
 
 import (
 	"bytes"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -35,34 +37,18 @@ func handleUploadMultipart(w http.ResponseWriter, r *http.Request) {
 		fail(w, r, 400, "up_multipart_bad")
 		return
 	}
-	// Cap body: single multipart request is capped at 128MB by design
-	// (chunked protocol is the path for big files).
-	r.Body = http.MaxBytesReader(w, r.Body, int64(multipartMax)+int64(multipartSlack))
-	body := make([]byte, 0, length)
-	if r.Body != nil {
-		defer r.Body.Close()
-		buf := make([]byte, copyBufSize)
-		var total int64
-		for {
-			if r.Context().Err() != nil {
-				break
-			}
-			nr, err := r.Body.Read(buf)
-			if nr > 0 {
-				total += int64(nr)
-				if total > int64(multipartMax)+int64(multipartSlack) {
-					fail(w, r, 413, "up_multipart_limit")
-					return
-				}
-				body = append(body, buf[:nr]...)
-			}
-			if err != nil {
-				break
-			}
-		}
-	}
-	saved, errMsg, errStatus := saveMultipart(body, boundary, reqLang(r))
+	// Streaming path: never buffer the whole body in RAM (old code did
+	// body=append up to 128MB + bytes.Split under a global lock, which
+	// blocked parallel uploads and spiked GC). Each file streams straight
+	// to its reserved dest; the global lock is held only for name
+	// reservation (microseconds), never across the network read.
+	saved, errMsg, errStatus := saveMultipartStream(w, r, boundary, reqLang(r))
 	if errStatus != 0 {
+		// saveMultipartStream already wrote nothing; report JSON.
+		if errStatus == 413 {
+			fail(w, r, errStatus, errMsg)
+			return
+		}
 		sendJSON(w, r, errStatus, map[string]interface{}{"error": errMsg})
 		return
 	}
@@ -70,7 +56,84 @@ func handleUploadMultipart(w http.ResponseWriter, r *http.Request) {
 		fail(w, r, 400, "up_multipart_empty")
 		return
 	}
+	invalidateListCaches()
 	sendJSON(w, r, 200, map[string]interface{}{"ok": true, "saved": saved})
+}
+
+// saveMultipartStream streams a multipart body file-by-file to disk.
+// Returns (saved basenames, errMsg key, http status or 0 on success).
+func saveMultipartStream(w http.ResponseWriter, r *http.Request, boundary, lang string) ([]string, string, int) {
+	max := maxBytes()
+	r.Body = http.MaxBytesReader(w, r.Body, int64(multipartMax)+int64(multipartSlack))
+	defer r.Body.Close()
+	mr := multipart.NewReader(r.Body, boundary)
+	saved := []string{}
+	buf := getCopyBuf()
+	defer putCopyBuf(buf)
+	var total int64
+	for {
+		if r.Context().Err() != nil {
+			break
+		}
+		part, err := mr.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			if len(saved) == 0 {
+				return nil, tr(lang, "up_multipart_bad"), 400
+			}
+			break
+		}
+		fn := part.FileName()
+		if fn == "" {
+			_, _ = io.Copy(io.Discard, io.LimitReader(part, 1<<20))
+			continue
+		}
+		base := fn
+		if i := strings.LastIndex(base, "/"); i >= 0 {
+			base = base[i+1:]
+		}
+		if i := strings.LastIndex(base, "\\"); i >= 0 {
+			base = base[i+1:]
+		}
+		name := safeFilename(base)
+		if name == "" || strings.HasPrefix(name, ".") {
+			_, _ = io.Copy(io.Discard, io.LimitReader(part, 1<<20))
+			continue
+		}
+		// Reserve dest under the naming lock only (never across I/O).
+		uploadLock.Lock()
+		dest := uniquePath(SharedDir, name)
+		f, cerr := os.OpenFile(dest, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+		uploadLock.Unlock()
+		if cerr != nil {
+			_, _ = io.Copy(io.Discard, io.LimitReader(part, 1<<20))
+			continue
+		}
+		// Per-file cap: max+1 to detect overflow without trusting headers.
+		written, werr := io.CopyBuffer(f, io.LimitReader(part, max+1), buf)
+		cerr = f.Close()
+		total += written
+		if werr != nil || cerr != nil {
+			_ = os.Remove(dest)
+			return nil, tr(lang, "up_multipart_save"), 500
+		}
+		if written == 0 || written > max {
+			_ = os.Remove(dest)
+			if written > max {
+				return nil, tr(lang, "up_too_big"), 400
+			}
+			continue
+		}
+		if total > int64(multipartMax)+int64(multipartSlack) {
+			_ = os.Remove(dest)
+			return nil, "up_multipart_limit", 413
+		}
+		saved = append(saved, filepath.Base(dest))
+		writeLog("multipart", "upload", saved[len(saved)-1]+" ("+strconv.FormatInt(written, 10)+"b)")
+	}
+	return saved, "", 0
 }
 func saveMultipart(body []byte, boundary string, lang string) ([]string, string, int) {
 	max := maxBytes()

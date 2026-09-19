@@ -8,13 +8,14 @@ import (
 	"strings"
 )
 
-// streamBodyToFile copies exactly length bytes from r.Body to f (1MB chunks,
-// capped by MaxBytesReader). Reports (written, clientGone, diskFail).
+// streamBodyToFile copies exactly length bytes from r.Body to f (pooled
+// buffer, capped by MaxBytesReader). Reports (written, clientGone, diskFail).
 func streamBodyToFile(w http.ResponseWriter, r *http.Request, f *os.File, length int64) (int64, bool, bool) {
 	r.Body = http.MaxBytesReader(w, r.Body, length)
 	defer r.Body.Close()
 	var written int64
-	buf := make([]byte, copyBufSize)
+	buf := getCopyBuf()
+	defer putCopyBuf(buf)
 	for remaining := length; remaining > 0; {
 		if r.Context().Err() != nil {
 			return written, true, false
@@ -58,23 +59,32 @@ func handleUploadChunk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if m.V == 2 {
+		// V2 sessions must use /upload_piece with index&hash so every
+		// byte is claim-checked; the legacy offset route stays open only
+		// for NoVerify (turbo) sessions, verified at complete time.
+		if !m.NoVerify {
+			fail(w, r, 400, "up_hash_required")
+			return
+		}
 		writeV2(w, r, uid, offset, length, nil, "", false)
 		return
 	}
-	// V1: serialize chunks per session (parallel same-offset chunks used to
-	// race past the offset check and corrupt data.part via O_APPEND).
+	// V1: validate under lock, stream the body unlocked, then report the
+	// re-statted offset (never hold sessLock across the network read).
 	lk := sessLock(uid)
 	lk.Lock()
-	defer lk.Unlock()
 	received := sessReceived(uid)
 	if offset != received {
+		lk.Unlock()
 		sendJSON(w, r, 409, map[string]interface{}{"error": "offset", "offset": received})
 		return
 	}
 	if received+length > m.Size {
+		lk.Unlock()
 		fail(w, r, 413, "up_chunk_over")
 		return
 	}
+	lk.Unlock()
 	// Cap body so a lying Content-Length can't OOM/Fill disk.
 	f, err := os.OpenFile(filepath.Join(sessDir(uid), "data.part"),
 		os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
@@ -82,12 +92,22 @@ func handleUploadChunk(w http.ResponseWriter, r *http.Request) {
 		fail(w, r, 500, "up_write_fail")
 		return
 	}
-	defer f.Close()
+	var written int64
 	if r.Body != nil {
-		if _, gone, diskFail := streamBodyToFile(w, r, f, length); gone || diskFail {
+		var gone, diskFail bool
+		written, gone, diskFail = streamBodyToFile(w, r, f, length)
+		f.Close()
+		if gone || diskFail {
 			fail(w, r, 500, "up_write_fail")
 			return
 		}
+		if written != length {
+			sendJSON(w, r, 400, map[string]interface{}{
+				"error": tr(reqLang(r), "up_short_piece"), "offset": sessReceived(uid)})
+			return
+		}
+	} else {
+		f.Close()
 	}
 	touchSessDir(uid)
 	sendJSON(w, r, 200, map[string]interface{}{"id": uid, "offset": sessReceived(uid)})
@@ -129,9 +149,17 @@ func handleUploadPiece(w http.ResponseWriter, r *http.Request) {
 	}
 	length := r.ContentLength
 	m := loadMeta(uid)
-	if m == nil || m.V != 2 {
+	if m == nil {
 		fail(w, r, 404, "up_no_piece_session")
 		return
+	}
+	if m.V != 2 {
+		if nm := upgradeGuestV1ToV2(uid); nm != nil && nm.V == 2 {
+			m = nm
+		} else {
+			fail(w, r, 404, "up_no_piece_session")
+			return
+		}
 	}
 	ps, claim, hasClaim, errKey := resolvePiece(m, index, length, q.Get("hash"))
 	if errKey != "" {
@@ -168,7 +196,10 @@ func mergeClaimHash(m *sessionMeta, claimIdx *int, claimHash string) string {
 	return ""
 }
 
-// verifySpan checks newly covered pieces, zeroing corrupt ones.
+// verifySpan checks newly covered pieces against their hashes.
+// Corrupt pieces are NOT zeroed on disk: their bytes are simply
+// un-accounted (bitmap cleared + range removed) so the client re-sends
+// them (they show up in missing). The caller persists meta once.
 // Returns bad piece indexes.
 func verifySpan(uid string, m *sessionMeta, offset, length int64) []int {
 	n := pieceCount(m)
@@ -178,7 +209,7 @@ func verifySpan(uid string, m *sessionMeta, offset, length int64) []int {
 	}
 	last := (offset + length - 1) / m.PieceLen
 	bad := []int{}
-	bm := getBitmap(m)
+	bm := []byte(getBitmap(m))
 	for i := int(first); i <= int(last) && i < n; i++ {
 		if i < len(bm) && bm[i] == '1' {
 			continue
@@ -188,18 +219,24 @@ func verifySpan(uid string, m *sessionMeta, offset, length int64) []int {
 			continue
 		}
 		if m.NoVerify {
-			markPiece(uid, m, i, true)
+			if i < len(bm) {
+				bm[i] = '1'
+			}
 			continue
 		}
 		if verifyPiece(uid, m, i) {
-			markPiece(uid, m, i, true)
+			if i < len(bm) {
+				bm[i] = '1'
+			}
 		} else {
-			zeroPiece(uid, m, i)
+			if i < len(bm) {
+				bm[i] = '0'
+			}
 			rangeRemove(m, ps, pe)
-			saveMeta(uid, m)
 			bad = append(bad, i)
 		}
 	}
+	m.Bitmap = string(bm)
 	return bad
 }
 
@@ -227,20 +264,27 @@ func writeV2(w http.ResponseWriter, r *http.Request, uid string, offset, length 
 			return
 		}
 	}
+	// Validate + pre-check the claim under lock; the slow body copy and
+	// the per-piece re-reads run unlocked. Meta is reloaded after
+	// re-acquiring and persisted exactly once per request below.
 	lk := sessLock(uid)
 	lk.Lock()
-	defer lk.Unlock()
 	m := loadMeta(uid)
 	if m == nil || m.V != 2 {
+		lk.Unlock()
 		fail(w, r, 404, "up_session_gone")
 		return
 	}
 	if offset+length > m.Size {
+		lk.Unlock()
 		fail(w, r, 413, "up_chunk_over")
 		return
 	}
 	if hasClaim {
+		// Fast 409 before consuming the body; the authoritative merge
+		// runs again on the reloaded meta after the write.
 		if errKey := mergeClaimHash(m, claimIdx, claimHash); errKey != "" {
+			lk.Unlock()
 			if errKey == "up_conflict" {
 				sendJSON(w, r, 409, map[string]interface{}{"error": tr(reqLang(r), errKey)})
 				return
@@ -249,7 +293,9 @@ func writeV2(w http.ResponseWriter, r *http.Request, uid string, offset, length 
 			return
 		}
 	}
-	f, err := os.OpenFile(filepath.Join(sessDir(uid), "data.part"), os.O_RDWR, 0644)
+	partPath := filepath.Join(sessDir(uid), "data.part")
+	lk.Unlock()
+	f, err := os.OpenFile(partPath, os.O_RDWR, 0644)
 	if err != nil {
 		fail(w, r, 500, "up_write_fail")
 		return
@@ -264,26 +310,45 @@ func writeV2(w http.ResponseWriter, r *http.Request, uid string, offset, length 
 	if r.Body != nil {
 		var gone, diskFail bool
 		written, gone, diskFail = streamBodyToFile(w, r, f, length)
+		f.Close()
 		if gone {
-			f.Close()
 			sendJSON(w, r, 499, map[string]interface{}{"error": tr(reqLang(r), "up_write_fail")})
 			return
 		}
 		if diskFail {
-			f.Close()
 			fail(w, r, 500, "up_write_fail")
 			return
 		}
+	} else {
+		f.Close()
 	}
-	f.Close()
 	if written != length {
 		sendJSON(w, r, 400, map[string]interface{}{
 			"error": tr(reqLang(r), "up_short_piece"), "offset": offset})
 		return
 	}
+	lk.Lock()
+	m = loadMeta(uid)
+	if m == nil || m.V != 2 {
+		lk.Unlock()
+		fail(w, r, 404, "up_session_gone")
+		return
+	}
+	if hasClaim {
+		if errKey := mergeClaimHash(m, claimIdx, claimHash); errKey != "" {
+			lk.Unlock()
+			if errKey == "up_conflict" {
+				sendJSON(w, r, 409, map[string]interface{}{"error": tr(reqLang(r), errKey)})
+				return
+			}
+			fail(w, r, 400, errKey)
+			return
+		}
+	}
 	rangeAdd(m, offset, offset+length)
 	bad := verifySpan(uid, m, offset, length)
 	saveMeta(uid, m)
+	lk.Unlock()
 	touchSessDir(uid)
 	received := receivedRangesBytes(m)
 	missing := missingPieces(m)

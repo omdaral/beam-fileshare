@@ -5,8 +5,11 @@
   "android": {
     "allowMixedContent": true
   },
+  "ios": {
+    "allowMixedContent": true
+  },
   "server": {
     "cleartext": true,
-    "allowNavigation": ["192.168.*.*", "10.*.*.*", "172.16.*.*", "127.0.0.1"]
+    "allowNavigation": ["192.168.*.*", "10.*.*.*", "172.16.*.*", "127.0.0.1", "localhost", "beam", "beam.local", "*.local"]
   }
 }

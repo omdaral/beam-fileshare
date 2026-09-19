@@ -37,15 +37,25 @@ cat > "$AD/AppRun" <<'EOF'
 HERE="$(dirname "$(readlink -f "$0")")"
 PORT=2004
 NO_BROWSER=0
+NO_TLS=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --port) PORT="${2:-2004}"; shift 2 ;;
     --no-browser) NO_BROWSER=1; shift ;;
+    --no-tls) NO_TLS=1; shift ;;
     *) shift ;;
   esac
 done
+# Scheme must match the server default (self-signed HTTPS unless disabled).
+SCHEME="https"
+if [ "$NO_TLS" = "1" ]; then SCHEME="http"; else
+  case "${BEAM_TLS:-}" in 0|false|FALSE|no|NO|off|OFF) SCHEME="http" ;; esac
+fi
 if [ "$NO_BROWSER" = "0" ] && command -v xdg-open >/dev/null 2>&1; then
-  xdg-open "http://127.0.0.1:$PORT" >/dev/null 2>&1 &
+  xdg-open "$SCHEME://127.0.0.1:$PORT" >/dev/null 2>&1 &
+fi
+if [ "$NO_TLS" = "1" ]; then
+  exec "$HERE/usr/bin/Beam" --port "$PORT" --no-browser --no-tls
 fi
 exec "$HERE/usr/bin/Beam" --port "$PORT" --no-browser
 EOF
@@ -89,6 +99,8 @@ if command -v unsquashfs >/dev/null 2>&1; then
   unsquashfs -o "$OFF" -l "$OUT" | head -20
 fi
 # Live smoke test on a scratch port (AppImage needs FUSE to run here).
+# Scheme-aware: the Beam binary defaults to self-signed HTTPS, so probe
+# https (-k: self-signed) first, then plain http (BEAM_TLS=0 builds).
 echo "--- live test ---"
 TPORT=2031
 "$OUT" --port "$TPORT" --no-browser >/tmp/beam-appimage-test.log 2>&1 &
@@ -99,12 +111,17 @@ if ! kill -0 $APID 2>/dev/null; then
   echo "      (users need FUSE2: sudo apt install libfuse2)"
   exit 0
 fi
+probe() { # $1 = base url ; $2 = extra curl flags
+  curl -s -o /dev/null --max-time 2 $2 "$1/health" 2>/dev/null
+}
 UP=0
 for _ in $(seq 1 20); do
   sleep 0.5
-  curl -s -o /dev/null --max-time 2 "http://127.0.0.1:$TPORT/health" 2>/dev/null && { UP=1; break; }
+  if probe "https://127.0.0.1:$TPORT" "-k" || probe "http://127.0.0.1:$TPORT" ""; then UP=1; break; fi
 done
-curl -s --max-time 5 -X POST "http://127.0.0.1:$TPORT/api/server/stop" -H 'Content-Type: application/json' -d '{}' >/dev/null 2>&1 || kill $APID 2>/dev/null
+curl -sk --max-time 5 -X POST "https://127.0.0.1:$TPORT/api/server/stop" -H 'Content-Type: application/json' -d '{}' >/dev/null 2>&1 \
+  || curl -s --max-time 5 -X POST "http://127.0.0.1:$TPORT/api/server/stop" -H 'Content-Type: application/json' -d '{}' >/dev/null 2>&1 \
+  || kill $APID 2>/dev/null
 wait $APID 2>/dev/null
 if [ "$UP" = "1" ]; then
   echo "live: ✅ /health OK, stopped cleanly"

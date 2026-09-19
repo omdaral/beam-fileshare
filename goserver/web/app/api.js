@@ -12,14 +12,30 @@ function genUuid(){
   }
 }
 function postJSON(url,obj){
-  return fetch(url,{method:"POST",headers:{"Content-Type":"application/json","X-Lang":(typeof LANG!=="undefined"?LANG:"ar")},body:JSON.stringify(obj)}).then(function(r){
+  return fetch(url,{method:"POST",headers:ownerHeaders({"Content-Type":"application/json","X-Lang":(typeof LANG!=="undefined"?LANG:"ar")}),body:JSON.stringify(obj)}).then(function(r){
     return r.json().then(function(j){return {status:r.status,body:j};}).catch(function(){return {status:r.status,body:null};});
   });
+}
+/* Owner pairing — session token proved once (loopback/native), then stored
+   in THIS browser and presented on every admin call, so any URL on any
+   paired browser is recognized as owner. Server stays source of truth
+   (is_admin comes back in every response). Token lives in headers only,
+   never in URLs/history. */
+function ownerTokenGet(){try{return localStorage.getItem("beam-owner")||"";}catch(e){return "";}}
+function ownerTokenSet(t){try{if(t&&/^[0-9a-f]{64}$/.test(t))localStorage.setItem("beam-owner",t);}catch(e){}}
+function ownerHeaders(h){
+  h=h||{};
+  try{var t=ownerTokenGet();if(t)h["X-Beam-Owner"]=t;}catch(e){}
+  return h;
+}
+function ownerTokenLearn(j){
+  // Accept the token only from a response that already proves ownership.
+  try{if(j&&j.is_admin&&j.owner_token)ownerTokenSet(String(j.owner_token));}catch(e){}
 }
 function xhrBin(url,blob,onAbort){
   return new Promise(function(resolve){
     var xhr=new XMLHttpRequest();xhr.open("POST",url);
-    xhr.timeout=90000;
+    xhr.timeout=25000;
     if(onAbort)onAbort(function(){try{xhr.abort();}catch(e){}});
     xhr.onload=function(){
       var j=null;try{j=JSON.parse(xhr.responseText);}catch(e){}

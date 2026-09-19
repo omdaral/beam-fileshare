@@ -20,11 +20,9 @@ func currentLANIP() string {
 		}
 	}
 	if h := mustHostname(); h != "" {
-		if ips, err := net.LookupHost(h); err == nil {
-			for _, ip := range ips {
-				if ip != "" && !strings.HasPrefix(ip, "127.") && !strings.Contains(ip, ":") {
-					return ip
-				}
+		for _, ip := range lookupHostBounded(h) {
+			if ip != "" && !strings.HasPrefix(ip, "127.") && !strings.Contains(ip, ":") {
+				return ip
 			}
 		}
 	}
@@ -62,6 +60,15 @@ func gatewayIP() string {
 	if running && ip != "" {
 		return ip
 	}
+	if IsPhoneBuild {
+		// No `ip`/`nmcli` binaries on Android and no desktop hotspot
+		// service: prefer the Java-reported address, else the dial-derived
+		// one. Skips up to 5s of doomed fork/exec per /api/status poll.
+		if pip := PhoneLanIP(); pip != "" {
+			return pip
+		}
+		return currentLANIP()
+	}
 	if runtime.GOOS == "windows" {
 		if code, out, _ := runCmd([]string{"ipconfig"}, 5*time.Second, "ar"); code == 0 && strings.Contains(out, windowsGateway) {
 			return windowsGateway
@@ -92,6 +99,29 @@ func HotspotStatus() map[string]interface{} {
 	running := hsRunning
 	ssid, ip, port, security := hsSSID, hsIP, hsPort, hsSecurity
 	hsMu.Unlock()
+	if IsPhoneBuild {
+		// Desktop tether checks (winTetherState/nmcli/`arp`) don't exist on
+		// Android; the phone hotspot state lives in Net (LOHS plugin), and
+		// the client list needs privileged APIs — report state only, fast.
+		NSMu.RLock()
+		pRunning := Net.HotspotRunning
+		pSSID, pSec := Net.SSID, Net.Security
+		NSMu.RUnlock()
+		if pSSID == "" {
+			pSSID = "Beam"
+		}
+		if pSec == "" {
+			pSec = "wpa"
+		}
+		displayIP := PhoneLanIP()
+		if displayIP == "" {
+			displayIP = currentLANIP()
+		}
+		return map[string]interface{}{
+			"running": pRunning, "ssid": pSSID, "ip": displayIP, "port": ServerPort,
+			"clients": []string{}, "security": pSec,
+		}
+	}
 	if running {
 		if runtime.GOOS == "windows" {
 			st := winTetherState()
