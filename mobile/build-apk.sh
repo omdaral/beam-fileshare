@@ -60,10 +60,14 @@ fi
 command -v gomobile >/dev/null 2>&1 || { echo "❌ تعذر تثبيت gomobile (ثبّته يدوياً: راجع mobile/SETUP.md)"; exit 1; }
 NDK_DIR="$(ls -d "$ANDROID_HOME"/ndk/* 2>/dev/null | sort -V | tail -1)"
 [ -n "$NDK_DIR" ] || { echo "❌ ثبّت NDK أولاً: sdkmanager \"ndk;26.3.11579264\" (راجع mobile/SETUP.md)"; exit 1; }
-gomobile init -ndk "$NDK_DIR" >/dev/null 2>&1 || true
+# Newer gomobile dropped the -ndk flag (NDK via ANDROID_NDK_HOME instead);
+# try the flag first, fall back to the env so old and new both work.
+gomobile init -ndk "$NDK_DIR" >/dev/null 2>&1 || { export ANDROID_NDK_HOME="$NDK_DIR"; gomobile init >/dev/null 2>&1 || true; }
 echo "—— 1/5 محرك Go داخل التطبيق (beam.aar)"
 export TMPDIR="${TMPDIR:-/tmp}"
-(cd ../goserver/beamapp && gomobile bind -androidapi 21 \
+# NOTE: bind resolves the android-tagged module graph (go list -m all) which
+# needs the module proxy — lift the global GOPROXY=off just for this step.
+(cd ../goserver/beamapp && GOPROXY="https://proxy.golang.org,direct" gomobile bind -androidapi 21 \
   -target android/arm64,android/arm -o ../../mobile/beam.aar .) \
   || { echo "❌ فشل gomobile bind (يحتاج NDK + شبكة أول مرة)"; exit 1; }
 [ -s beam.aar ] || { echo "❌ لم يُنتج beam.aar"; exit 1; }
