@@ -23,8 +23,8 @@
 - ❌ Chat or calls between devices.
 - ❌ Cloud sync or internet upload.
 - ❌ User accounts and complex login.
-- ❌ Native mobile app (APK/IPA) at this stage.
-- ❌ Advanced military-grade encryption — WPA2 password + entry code is enough for now.
+- ❌ iOS native app (IPA) at this stage — Android APK exists as an optional wrapper (see `mobile/SETUP.md`), iPhone uses Safari → Add to Home Screen.
+- ❌ Advanced military-grade encryption — WPA2 password is enough for now (security = Wi-Fi password, no entry codes).
 
 ## 5. Success Metrics (how we measure)
 | Metric | Success |

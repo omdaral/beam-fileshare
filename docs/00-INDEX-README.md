@@ -38,11 +38,11 @@ without installing anything, without internet, and without libraries.
   After copying the folder anywhere, run `./install.sh` in the new location)
 - [x] Full Python → Go replacement: all Python files deleted (`fileshare.py`/`hotspot.py`/`desktop.py`/tests/`vendor/`)
 - [x] Web simplification: direct entry with no code (security = Wi-Fi password) + atomic upload + safe delete (v1.0.2)
-- [x] Large files up to 20GB: 2MB parallel chunked upload + fingerprints + resume + auto refresh + LAN/Hotspot/Open (v1.1.0)
+- [x] Large files (no size limit by default): parallel chunked upload + fingerprints + resume + auto refresh + LAN/Hotspot/Open (v1.1.0, single fast+reliable mode since v1.6.x)
 - [x] Operation clarity: v1.2.1 version stamp + in-browser Admin section + single icon
 - [x] Landing page + owner settings window (tabbed Modal) + default visitor language (v1.3.0)
 - [x] Folder sharing: collapsible tree + lightweight search + zip download + recursive delete + over-limit zip queue with reason (v1.4.0)
-- [x] Always-zipped folders + transfer modes (reliable/turbo per operation) + isolated background extraction (v1.5.0)
+- [x] Always-zipped folders + single fast+reliable transfer mode + isolated background extraction (v1.5.0 modes unified in v1.6.x; `noverify` remains as a legacy API flag only)
 - [ ] In-company testing (checklist in `TEST_CHECKLIST.md` — real trial + `go -C goserver test ./...` on the build machine)
 
 ## Unified Terms

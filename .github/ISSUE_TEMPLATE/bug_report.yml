@@ -1,0 +1,68 @@
+name: Bug report
+description: Report something broken in Beam
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please fill this in — it saves a lot of back-and-forth.
+        Security issues? Do NOT use this form — see `SECURITY.md`.
+  - type: input
+    id: version
+    attributes:
+      label: Beam version
+      description: Content of VERSION file or release tag (e.g. v1.6.0)
+      placeholder: v1.6.0
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS / arch
+      options:
+        - Linux amd64
+        - Linux arm64
+        - Windows amd64
+        - Windows arm64
+        - macOS Intel
+        - macOS Apple Silicon
+        - Android APK
+        - iPhone (Safari / Add to Home Screen)
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Network mode
+      options:
+        - LAN (existing Wi-Fi)
+        - Hotspot
+        - Open network (Linux)
+        - TLS (--tls)
+      default: LAN (existing Wi-Fi)
+    validations:
+      required: false
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, what you got instead
+      placeholder: I copied the folder, ran ./install.sh, double-clicked Beam… expected the page to open, got…
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce + command
+      description: Exact command and minimal steps (e.g. ./Beam --port 2004)
+      placeholder: 1. … 2. … Command: ./Beam --port 2004
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log lines
+      description: From the in-app Devices & Log tab (last lines only, no private IPs beyond 192.168.x.x examples)
+      render: text
+    validations:
+      required: false

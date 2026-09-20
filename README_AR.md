@@ -5,19 +5,32 @@
 
 > **الإصدار الحالي:** `v1.6.0` — رقم الإصدار يظهر في شارة على الصفحة الرئيسية لتتأكد أنك تشغّل أحدث بناء.
 >
-> **English?** See [README.md](README.md) — **مساعدة؟** انظر [HELP.md](HELP.md).
+> **English?** See [README.md](README.md) — **مساعدة؟** انظر [HELP.md](HELP.md) — **كل روابط التحميل:** [DOWNLOAD.md](DOWNLOAD.md).
 
 ---
 
-## تحميل حسب نظام التشغيل
+## التحميل الجاهز (بدون بناء — اختر نظامك)
 
-| النظام | الملف | التشغيل |
+> التحميل من **GitHub Releases** (بدون أوامر بناء). سكربت بنقرة واحدة أو رابط مباشر — نفس الملفات:
+>
+> ```bash
+> curl -sSL https://raw.githubusercontent.com/AhmedFaseh/beam-fileshare/main/get-beam.sh | bash
+> ```
+>
+> أو افتح القائمة الكاملة مع البصمات: [DOWNLOAD.md](DOWNLOAD.md) · [صفحة Releases](https://github.com/AhmedFaseh/beam-fileshare/releases/latest).
+
+| النظام | تحميل مباشر (v1.6.0) | التشغيل |
 |---|---|---|
-| Linux amd64 / arm64 | `dist/portables/1.6.0/Beam-1.6.0-linux-*.tar.gz` | فك الضغط ثم `./install.sh` ثم نقرة مزدوجة على أيقونة **Beam** |
-| Windows amd64 / arm64 | `dist/portables/1.6.0/Beam-1.6.0-windows-*.zip` | ضع `Beam.exe` + `Beam.bat` + `VERSION` معاً ثم نقرة مزدوجة على `Beam.bat` |
-| Mac amd64 / arm64 | `dist/portables/1.6.0/Beam-1.6.0-macos-*.zip` | ضع `Beam` + `Beam.command` + `VERSION` معاً ثم نقرة مزدوجة على `Beam.command` |
-| Android | `dist/mobile/Beam-1.6.0-android.apk` | انسخ الـ APK إلى الهاتف وثبّته (التفاصيل في `mobile/SETUP.md`) |
+| Linux amd64 | [Beam-1.6.0-linux-amd64.tar.gz](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.6.0-linux-amd64.tar.gz) | فك الضغط ثم `./install.sh` ثم نقرة مزدوجة على أيقونة **Beam** |
+| Linux arm64 | [Beam-1.6.0-linux-arm64.tar.gz](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.6.0-linux-arm64.tar.gz) | نفس الخطوات (Raspberry Pi / سيرفرات ARM) |
+| Windows amd64 | [Beam-1.6.0-windows-amd64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.6.0-windows-amd64.zip) | ضع `Beam.exe` + `Beam.bat` + `VERSION` معاً ثم نقرة مزدوجة على `Beam.bat` |
+| Windows arm64 | [Beam-1.6.0-windows-arm64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.6.0-windows-arm64.zip) | نفس الخطوات (لابتوبات Snapdragon / ARM) |
+| Mac Intel | [Beam-1.6.0-macos-amd64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.6.0-macos-amd64.zip) | ضع `Beam` + `Beam.command` + `VERSION` معاً ثم نقرة مزدوجة على `Beam.command` |
+| Mac Apple Silicon | [Beam-1.6.0-macos-arm64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.6.0-macos-arm64.zip) | نفس الخطوات (M1/M2/M3) |
+| Android | [Beam-1.6.0-android.apk](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.6.0-android.apk) | انسخ الـ APK إلى الهاتف وثبّته (وافق على "مصادر غير معروفة" مرة واحدة) |
 | iPhone | لا يوجد تطبيق — من Safari اختر **Add to Home Screen** | يعمل كأيقونة بملء الشاشة مثل التطبيق |
+
+> مش عارف أي ملف؟ شغّل سكربت النقرة الواحدة بالأعلى — يكتشف نظامك ومعماريتك تلقائياً (`get-beam.sh`).
 
 > ملف `Beam.prev` الموجود بجانب البرنامج **للرجوع للنسخة السابقة (rollback) فقط** — لا توزّعه ولا تحذفه.
 
@@ -39,7 +52,7 @@
 5. **الإيقاف:** زر ⏻ مستدير بعنوان **"Stop server"** أعلى الصفحة (يظهر لصاحب الجهاز فقط)، أو `Ctrl+C` في الطرفية.
 6. **راحة بال:** لو تركت السيرفر يعمل سيتوقف وحده بعد **5 ساعات بدون نشاط** (أي رفع أو تحميل أو تصفح يصفّر العدّاد).
 
-> رابط الدخول ثابت دائماً على المنفذ **2004**: `http://<ip>:2004` (HTTP عادي افتراضياً — بدون تحذيرات شهادات). لتشفير traffic الشبكة المحلية شغّل مع `--tls` (أو `BEAM_TLS=1`): ثم افتح `https://<ip>:2004`، واقبل تحذير الشهادة الذاتية مرة واحدة، وتحقق من البصمة التي يعرضها البرنامج.
+> رابط الدخول ثابت دائماً على المنفذ **2004**: `http://<ip>:2004` (HTTP عادي افتراضياً — بدون تحذيرات شهادات). لتشفير حركة الشبكة المحلية شغّل مع `--tls` (أو `BEAM_TLS=1`): ثم افتح `https://<ip>:2004`، واقبل تحذير الشهادة الذاتية مرة واحدة، وتحقق من البصمة التي يعرضها البرنامج.
 
 ### Windows (بدون تثبيت)
 
@@ -55,12 +68,12 @@
 3. نسخة Mac تعمل في **وضع الشبكة المحلية فقط** — انضم لنفس الواي فاي وافتح رابط الدخول.
 4. ملفاتك في `~/Downloads/Beam`.
 
-### Android (تطبيق اختياري)
+### Android (تطبيق جاهز — بدون بناء)
 
-1. الملف: `dist/mobile/Beam-1.6.0-android.apk` — انسخه إلى الهاتف وافتحه.
+1. حمّل الـ APK الجاهز من [صفحة Releases](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.6.0-android.apk) — انسخه إلى الهاتف وافتحه.
 2. وافق على "التثبيت من مصادر غير معروفة" لهذه المرة.
 3. افتح Beam واضغط **"▶ تشغيل السيرفر"** — ستظهر الحالة **"يعمل الآن"** مع العنوان والـ QR.
-4. التفاصيل الكاملة خطوة بخطوة في [`mobile/SETUP.md`](mobile/SETUP.md).
+4. البناء من المصدر للمطورين فقط: [`mobile/SETUP.md`](mobile/SETUP.md).
 
 ### iPhone (بدون تطبيق)
 
@@ -159,15 +172,15 @@
 
 ## التثبيت كحزم نظام (اختياري)
 
-- **حزم محمولة جاهزة:** `dist/portables/` — انسخ الحزمة المناسبة لأي جهاز وانقر نقراً مزدوجاً، بدون تثبيت.
-- **Debian / Ubuntu:** ملف `.deb` من `dist/debian/` — يضيف أيقونة وأمر `beam`.
-- **Fedora / Arch / AppImage / Flatpak:** انظر `packaging/README.md` و `PACKAGING_NOTES.md`.
+- **حزم محمولة جاهزة:** من [صفحة Releases](https://github.com/AhmedFaseh/beam-fileshare/releases/latest) — القائمة الكاملة في [DOWNLOAD.md](DOWNLOAD.md).
+- **Debian / Ubuntu:** ملف `.deb` من Releases — يضيف أيقونة وأمر `beam`.
+- **Fedora / Arch / AppImage / Flatpak:** انظر [DOWNLOAD.md](DOWNLOAD.md) ثم `packaging/README.md` و `PACKAGING_NOTES.md`.
 
 ## للمطورين (يحتاج Go مرة واحدة)
 
 ```bash
 go -C goserver run ./cmd/beam                                   # وضع الشبكة المحلية
-go -C goserver run ./cmd/beam --hotspot --password 12345678     # شبكة خاصة
+go -C goserver run ./cmd/beam --hotspot --password YourStrongPass123    # شبكة خاصة (مثال فقط — اختر 8+ أحرف)
 go -C goserver run ./cmd/beam --no-browser --idle-timeout 30m   # بدون متصفح + إيقاف بعد 30 دقيقة خمول
 go -C goserver test ./...                                       # كل الاختبارات
 ```

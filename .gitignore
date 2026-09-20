@@ -46,3 +46,43 @@ Thumbs.db
 __pycache__/
 *.pyc
 *.pyo
+
+# Secrets / env (never commit)
+.env
+.env.*
+*.env
+
+# Keys, certs & credentials (never commit)
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+
+# Root JS deps / venvs (mobile/node_modules already covered below)
+node_modules/
+.venv/
+venv/
+
+# Generic build outputs (dist/ already ignored above — these are extra safety)
+*.apk
+*.aab
+*.aar
+*.deb
+*.rpm
+*.AppImage
+*.tar.gz
+*.zip
+
+# Go test / coverage outputs
+*.test
+*.out
+coverage.html
+coverage.out
+
+# Editors / OS extras
+.vscode/
+.idea/
+*~
+*.swp

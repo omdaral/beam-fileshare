@@ -65,7 +65,7 @@ Beam(.exe)
 ## 5. Security (by user decision: Wi-Fi password is the only line of defense)
 1. Strong WPA2 network password (12+ chars recommended, changed periodically) — any device on network enters directly.
 2. Block `../` and hidden files in filenames (Path Traversal + temp hiding).
-3. Single-file size limit: 20GB by default (changeable per session from Settings) — chunked upload never holds file in RAM.
+3. Single-file size limit: unlimited by default (`max_file_mb = 0`, changeable per session from Settings) — chunked upload never holds file in RAM.
 4. Memory log (last 500 lines in web page): who uploaded/downloaded/deleted what and when (for review during session).
 5. Atomic writes prevent downloading an incomplete file during upload; locking prevents losing a file on same-name concurrency.
 6. Open network (Linux only): `wifi_open=true` — with explicit warning; Windows rejects it with a clear message.

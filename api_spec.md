@@ -48,12 +48,12 @@
 - `POST /delete` accepts `{file:path}` or `{dir:path}` (safe recursive delete inside the share folder + pruning empty folders).
 - The chunked-upload protocol accepts `name` with a relative path — each file is an independent session (resume/checksums as-is).
 
-## Transfer modes + always-compressed folders (v1.5.0)
+## Transfer modes + always-compressed folders (v1.5.0, unified in v1.6.x)
 - Folders upload directly file-by-file with no browser compression (each file its own resumable session keeping the same structure); a single `.zip` uploaded with `extract:true` is unpacked by the server after completion.
-- `upload_init` accepts `noverify:true` (turbo session: chunks without checksums) and `extract:true` (extract intent).
-- `upload_complete` accepts `full_hash` (required for turbo sessions, `422` without it) and `extract`; the extract intent sticks to the session so it works with resume.
+- `upload_init` accepts `noverify:true` (legacy turbo flag: chunks without per-chunk checksums) and `extract:true` (extract intent). The UI in v1.6.x uses a single fast+reliable mode (verified pieces); `noverify` remains accepted for backward compatibility only.
+- `upload_complete` accepts `full_hash` (required for legacy `noverify` sessions, `422` without it) and `extract`; the extract intent sticks to the session so it works with resume.
 - After completion: background extraction into the tree (staged under a hidden dot dir, then moved without overwriting; pre-check + live byte/file caps + zip-slip protection + entry modtimes kept), then the zip is deleted; any failure keeps the zip with only a log line.
-- **Reliable** mode (2MB x3 + checksum/chunk, default) and **turbo** mode (8MB x6 + single final check) — a switch per upload/download operation, and turbo download skips IndexedDB persistence.
+- **Current behavior (v1.6.x):** single fast+reliable mode (parallel verified pieces, no UI switch); large files fall back to direct browser download automatically.
 
 ## HTTPS (optional self-signed LAN certificate)
 

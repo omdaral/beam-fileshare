@@ -1,0 +1,30 @@
+name: Feature request
+description: Suggest an idea for Beam
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        New ideas must pass the 3 constitution questions (`docs/01-Goals.md`): preserves "no install"? works offline? works on Windows + Linux (or documented alternative)?
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user problem does this solve? Who benefits (host / guest / both)?
+      placeholder: As a guest on mobile I want to…
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Your suggested solution (UI, command, API if relevant)
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other ways to solve it, and why they are worse
+    validations:
+      required: false

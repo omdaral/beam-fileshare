@@ -73,13 +73,17 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq squashfs-tools rpm file desktop-file-utils
-          pip3 install --quiet pillow
+          # ubuntu-latest (24.04+) blocks system pip installs (PEP 668), so
+          # allow the break with a fallback for older runners/images.
+          pip3 install --quiet --break-system-packages pillow || pip3 install --quiet pillow
 
       - name: Fetch AppImage runtimes (gitignored locally)
         run: |
           mkdir -p packaging/tools
-          curl -sSL -o packaging/tools/runtime-x86_64 https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64
-          curl -sSL -o packaging/tools/runtime-aarch64 https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-aarch64
+          curl -fSSL -o packaging/tools/runtime-x86_64 https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64
+          curl -fSSL -o packaging/tools/runtime-aarch64 https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-aarch64
+          test -s packaging/tools/runtime-x86_64 || { echo "runtime-x86_64 download failed or empty"; exit 1; }
+          test -s packaging/tools/runtime-aarch64 || { echo "runtime-aarch64 download failed or empty"; exit 1; }
           ls -la packaging/tools/
 
       - name: 3/10 Regenerate icons
@@ -274,5 +278,19 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: release-files/**/*
+          # Flat release assets must have unique basenames: raw trees
+          # dist/linux|windows|darwin/<arch>/<ver>/Beam[.exe] share the same
+          # names across arches and would collide. Ship only the uniquely
+          # named deliverables (portables/packages/APK + indexes); raw
+          # binaries stay available as run Artifacts (desktop/release-artifacts).
+          files: |
+            release-files/**/*.tar.gz
+            release-files/**/*.zip
+            release-files/**/*.deb
+            release-files/**/*.AppImage
+            release-files/**/*.rpm
+            release-files/**/*.apk
+            release-files/**/MANIFEST.json
+            release-files/**/SHA256SUMS
+            release-files/**/versions.json
           generate_release_notes: true

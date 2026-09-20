@@ -3,6 +3,8 @@
 > Printable: copy it on paper and mark ✅ / ❌ for each item. Environment: LAN or Hotspot, default port `2004`.
 
 ## 0) General setup (before every item)
+- [ ] Download check: every asset in DOWNLOAD.md resolves (HTTP 200) — 6 portables + APK + deb/AppImage/rpm + SHA256SUMS + MANIFEST.json
+- [ ] `bash -n get-beam.sh` passes, and `bash get-beam.sh --no-extract --dir /tmp/beam-dl-test` downloads the correct file for this machine
 - [ ] Server is running: `./Beam --port 2004` (or `go -C goserver run . --port 2004`) and prints `http://IP:2004` links
 - [ ] At startup: prints **device entry link** + shows a system notification with it (Linux)
 - [ ] Beam page on the host machine: entry hero in large type at the top of the page + working copy button + ⚙️ Settings button visible in the header
@@ -31,7 +33,7 @@ curl -s $BASE/ | grep -c "ownerZone\|Beam"
 # - Bar cap: upload a large folder (50+ files) → one grouped row with counter and total bar + ≤5 individual bars + finished ones disappear leaving the last 5 → cancel a batch mid-flight and confirm it stops
 # - Packages: deb builds and lintian is clean (except maintainer identity) + AppImage builds and runs (health) + manifest/metainfo validated — acceptance gate
 # - Always-zipped folder: upload a folder → single zip session → tree appears after completion → single zip file stays as-is with no extraction
-# - Modes: upload the same file reliable then turbo (turbo badge visible) → cut mid-transfer: reliable resumes from the chunk, turbo retries only large chunks → download in both modes and compare
+# - Modes: upload the same file in the single fast+reliable mode → cut mid-transfer → resume re-picks the same file and continues from the missing chunks → download and compare byte-identical
 # - Over-cap folder: shows as a zip row with the reason and does not open as a tree — acceptance gate
 # - Scan Wi-Fi QR and link QR with a phone: instant connect/open — acceptance gate
 # - Branding: Beam logo visible + light paper theme by default + toggle switches to dark and saves the choice
@@ -110,7 +112,7 @@ curl -s $BASE/files | grep -o "race[^\"]*"
 ## 1) Double-click on a clean machine (no Python/Go)
 > Success metric: from double-click to network/link display < 30 seconds. Client library installs = zero.
 - [ ] Copy the whole folder (icon `Beam.desktop` + program `Beam`) to a clean machine with no Python/Go
-- [ ] Double-click → `Company Share شغال` ("Company Share running") lines + IP:Port links appear within < 30 seconds
+- [ ] Double-click → `Beam شغال` ("Beam running") lines + IP:Port links appear within < 30 seconds
 - [ ] Open `http://127.0.0.1:2004/health` from the same machine
 ```bash
 curl -s http://127.0.0.1:2004/health
@@ -149,7 +151,7 @@ sha256sum -c <(sed 's|/tmp/big500.bin|/tmp/big500_dl.bin|' /tmp/big.sha) && echo
 - [ ] From the browser: re-select the same file after a page refresh mid-upload → resumes (automatic find) and does not start from zero
 - [ ] From another browser/device: select the same file → existing progress is adopted (resume with a new identity)
 - [ ] Did the speed and remaining-time counter show during upload? Yes / No — Measured speed: ____
-- [ ] Single download button per file (reliable/turbo switch controls it): progress + speed + pause/resume + fingerprint check? Yes / No — Huge file (>800MB) falls back to direct download automatically? Yes / No
+- [ ] Single download button per file (single fast+reliable mode): progress + speed + pause/resume + fingerprint check? Yes / No — Huge file (>800MB) falls back to direct download automatically? Yes / No
 - [ ] Folder zip button: preflight error (missing/empty/over-limit folder) shows readable text and starts no download? Yes / No — Healthy folder downloads as `Name.zip` and opens? Yes / No
 - [ ] Folder zip STORE (default): `GET /download_zip?dir=Docs&method=store` returns exact `Content-Length` == body length, opens as a valid zip, includes empty subdirs, entries use STORE? Yes / No — `method=deflate` is 400 zip_store_only (ZIP-only)? Yes / No — `method=bogus` is a clean 400? Yes / No
 - [ ] Upload-extract staging: upload a `.zip` with `extract:true` → tree lands without overwriting same names (`Name (1)`…), source zip removed on success / kept on corrupt zip, no `.extract-*` leftovers? Yes / No

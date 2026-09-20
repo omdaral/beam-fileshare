@@ -6,7 +6,8 @@
 
 ```go
 // Start networking (default SSID Beam, 8+ character password)
-ok, msg, info := hotspotStart("Beam", "password123", 2004, false)
+// NOTE: values below are placeholders for documentation only — pick your own password.
+ok, msg, info := hotspotStart("Beam", "Choose_8Plus_Chars", 2004, false)
 fmt.Println(msg)
 if ok {
     fmt.Println("URL:", info["url"]) // example: http://192.168.137.1:2004
@@ -26,7 +27,7 @@ ok, msg = hotspotStop()
 ```
 --hotspot                start hotspot before server
 --ssid Beam     network name
---password password123   hotspot password (8+ chars)
+--password YourStrongPass123   hotspot password (8+ chars, example only — pick your own)
 --open                   open network with no password (Linux only)
 --lan-mode               skip hotspot and work on the current network
 --port 2004              fixed port (default 2004)
@@ -35,7 +36,7 @@ ok, msg = hotspotStop()
 --idle-timeout 5h        auto shutdown after idle (0 to disable)
 ```
 
-- `--hotspot --ssid Beam --password password123` → calls `hotspotStart(...)` then starts the server.
+- `--hotspot --ssid Beam --password YourStrongPass123` → calls `hotspotStart(...)` then starts the server.
 - `--lan-mode` (or `start` failure) → calls `lanFallbackInfo(port)` and prints `url` for clients.
 - On stop (Ctrl+C) → calls `hotspotStop()`.
 - From the browser (host machine): `POST /api/net/start` with the same options — and if privileges are missing

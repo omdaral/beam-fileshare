@@ -26,7 +26,7 @@
 4. After entry she sees:
    - Large **"ارفع ملفات"** ("Upload files") button + drag-and-drop area
    - List of available files for download with size and a download button per file
-5. Selects a file (up to 20GB) and presses upload -> sees a % progress bar -> message "تم الرفع بنجاح" ("Upload completed successfully").
+5. Selects a file (no size limit by default) and presses upload -> sees a % progress bar -> message "تم الرفع بنجاح" ("Upload completed successfully").
    - If the connection drops: re-select the same file and it resumes where it stopped (even after refreshing the page).
    - The list auto-refreshes every 5 seconds — no refresh button.
 6. Downloads a file Ahmed shared -> it saves to her phone.

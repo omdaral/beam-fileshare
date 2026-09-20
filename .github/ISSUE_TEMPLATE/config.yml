@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Troubleshooting (HELP)
+    url: https://github.com/AhmedFaseh/beam-fileshare/blob/main/HELP.md
+    about: Port busy, firewall, icon not working, hotspot, AppImage, Mac/Windows prompts — check here first.
+  - name: Downloads
+    url: https://github.com/AhmedFaseh/beam-fileshare/blob/main/DOWNLOAD.md
+    about: Which file to download, one-click script, checksums, 404 fixes.
+  - name: Security report (private)
+    url: https://github.com/AhmedFaseh/beam-fileshare/blob/main/SECURITY.md
+    about: Do not file public issues for vulnerabilities — read the policy first.
