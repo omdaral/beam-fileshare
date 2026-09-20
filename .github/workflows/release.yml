@@ -222,7 +222,15 @@ jobs:
           GOPROXY="https://proxy.golang.org,direct" GOTOOLCHAIN=auto go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20231127183840-76ac6878050a
           NDK_DIR="$(ls -d "$ANDROID_HOME"/ndk/* | sort -V | tail -1)"
           echo "NDK: $NDK_DIR"
-          GOPROXY="https://proxy.golang.org,direct" gomobile init -ndk "$NDK_DIR"
+          # Newer gomobile dropped the -ndk flag (NDK via ANDROID_NDK_HOME);
+          # older ones need -ndk. Try the flag first, fall back to the env.
+          if ! GOPROXY="https://proxy.golang.org,direct" gomobile init -ndk "$NDK_DIR" 2>/tmp/gomobile-ndk-err.log; then
+            cat /tmp/gomobile-ndk-err.log
+            echo "retrying with ANDROID_NDK_HOME (no -ndk flag)..."
+            export ANDROID_NDK_HOME="$NDK_DIR"
+            echo "ANDROID_NDK_HOME=$NDK_DIR" >> "$GITHUB_ENV"
+            GOPROXY="https://proxy.golang.org,direct" gomobile init
+          fi
 
       # Non-fatal like publish.sh step 9: without a working Android toolchain
       # the APK is skipped with a warning and the rest of the release goes on.
@@ -269,7 +277,7 @@ jobs:
       - name: Delivery report (mirrors the publish.sh final table)
         run: |
           echo "========== Beam delivery report =========="
-          echo "  binaries:  $(find dist/linux dist/windows dist/darwin -type f 2>/dev/null | wc -l) files"
+          echo "  ref: ${GITHUB_REF:-unknown} (event: ${GITHUB_EVENT_NAME:-unknown})"          echo "  binaries:  $(find dist/linux dist/windows dist/darwin -type f 2>/dev/null | wc -l) files"
           echo "  portables: $(find dist/portables -type f 2>/dev/null | wc -l) files"
           echo "  deb:       $(ls dist/debian/*.deb 2>/dev/null | wc -l) file(s)"
           echo "  appimage:  $(ls dist/appimage/*.AppImage 2>/dev/null | wc -l) file(s)"
@@ -286,9 +294,9 @@ jobs:
           if-no-files-found: error
 
   release:
-    # GitHub Releases need a tag; a manual run still builds + verifies and
-    # leaves everything downloadable from the run's Artifacts section.
-    if: github.ref_type == 'tag'
+    # Publish on tag pushes. The condition uses the full ref on purpose:
+    # it is unambiguous where ref_type has proven flaky on tag re-pushes.
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
     needs: [finalize]
     runs-on: ubuntu-latest
     steps:
