@@ -2,6 +2,7 @@ package beamcore
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -190,15 +191,19 @@ func TestAdminFlow(t *testing.T) {
 		t.Errorf("access_code should be dropped from config: %v", saved2)
 	}
 
-	// 6b) Owner clears the log: file becomes empty.
+	// 6b) Owner clears the log: only the audit line remains.
 	writeLog("127.0.0.1", "test", "before-clear")
 	st, j, _ = doJSON(t, "POST", ts.URL+"/api/logs/clear", map[string]interface{}{}, nil)
 	if st != 200 || j["ok"] != true {
 		t.Fatalf("logs clear = %d %v", st, j)
 	}
 	st, j, _ = doJSON(t, "GET", ts.URL+"/api/logs?tail=5", nil, nil)
-	if st != 200 || len(j["lines"].([]interface{})) != 0 {
-		t.Fatalf("log should be empty after clear: %d %v", st, j)
+	if st != 200 {
+		t.Fatalf("logs read = %d %v", st, j)
+	}
+	lines := j["lines"].([]interface{})
+	if len(lines) != 1 || !strings.Contains(lines[0].(string), "logs_cleared") {
+		t.Fatalf("log should hold exactly the clear audit line: %d %v", st, j)
 	}
 
 	// 6c) Owner sees the client list shape.

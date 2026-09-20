@@ -38,3 +38,30 @@ func ValidatePort(port int) int {
 	}
 	return -1
 }
+
+// validateHotspotPassword enforces 8..63 chars with no CR/LF (injection
+// safe). Empty is allowed only for open networks.
+func validateHotspotPassword(pw string, openNet bool) string {
+	if openNet {
+		return ""
+	}
+	if len([]rune(pw)) < 8 || len(pw) > 63 {
+		return "pass_short"
+	}
+	if strings.ContainsAny(pw, "\r\n\x00") {
+		return "pass_bad_chars"
+	}
+	return ""
+}
+
+// validHotspotCreds rejects newline/leading-dash SSID/password tricks
+// that could become option-injection in netsh/nmcli arg building.
+func validHotspotCreds(ssid, password string) bool {
+	if strings.ContainsAny(ssid, "\r\n\x00") || strings.ContainsAny(password, "\r\n\x00") {
+		return false
+	}
+	if strings.HasPrefix(strings.TrimSpace(ssid), "-") {
+		return false
+	}
+	return true
+}

@@ -38,9 +38,9 @@ func trustedAppOrigin(origin string) bool {
 		return true
 	case "http", "https":
 		// Local pages opened directly (desktop preview, dev tools).
+		// Only exact trusted names — no wildcard *.local (mDNS spoofable).
 		if host == "localhost" || host == "127.0.0.1" || host == "::1" ||
-			host == "beam" || host == "beam.local" ||
-			strings.HasSuffix(host, ".local") {
+			host == "beam" || host == "beam.local" {
 			return true
 		}
 		return false

@@ -417,10 +417,13 @@ function refreshSessions(){
       var d=document.createElement("div");d.className="file";
       var nm=document.createElement("span");nm.className="name";nm.textContent=s.name;
       try{nm.title=s.name+" ("+fmt(s.size)+") — "+T("sess_pick");}catch(e){}
+      try{nm.style.direction="auto";nm.style.unicodeBidi="plaintext";}catch(e2){}
       var pct=s.size?Math.round(s.received/s.size*100):0;
       var sz=document.createElement("span");sz.className="size";sz.textContent=fmt(s.received)+" / "+fmt(s.size)+" ("+pct+"%)";
       var go=document.createElement("button");go.className="btn-blue";setBtn(go,ICONS.dl,T("sess_resume")+" "+pct+"%");
+      try{go.title=T("resume_pick")+" "+s.name+" ("+fmt(s.size)+", "+pct+"%)";}catch(e3){}
       go.onclick=function(){
+        show($("sessMsg"),T("resume_pick")+" "+s.name+" ("+fmt(s.size)+", "+pct+"%)",true);
         window._adoptTarget={id:s.id,name:s.name};
         try{document.getElementById("picker").click();}
         catch(e){show($("sessMsg"),T("sess_pick"),false);}

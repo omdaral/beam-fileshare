@@ -47,6 +47,15 @@ func sendJSON(w http.ResponseWriter, r *http.Request, status int, obj interface{
 	body := bytes.TrimRight(buf.Bytes(), "\n")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
+	// Never cache API payloads (status/config/sessions leak topology).
+	if r != nil && r.URL != nil {
+		p := r.URL.Path
+		if strings.HasPrefix(p, "/api/") || strings.HasPrefix(p, "/upload") ||
+			p == "/files" || p == "/file_hash" {
+			w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
+			w.Header().Set("Pragma", "no-cache")
+		}
+	}
 	w.Header().Set("Content-Length", strconv.FormatInt(int64(len(body)), 10))
 	w.WriteHeader(status)
 	if r.Method == "HEAD" {

@@ -23,7 +23,7 @@ var (
 	// AppVersion is injected at build time via:
 	//   go build -ldflags "-X fileshare.AppVersion=$VER"
 	// Fallback matches VERSION file so dev runs (go run) still report right.
-	AppVersion = "1.6.0"
+	AppVersion = "1.7.0"
 	ServerPort = 2004
 
 	// IsPhoneBuild is true when the engine runs inside the Android app
@@ -59,6 +59,21 @@ var (
 	uuidRe = regexp.MustCompile(`^[0-9a-zA-Z_-]{8,64}$`)
 	hexRe  = regexp.MustCompile(`^[0-9a-fA-F]+$`)
 )
+
+// validSessID rejects dot-only / dash-only ids that pass uuidRe but
+// confuse path handling (e.g. "........"). Requires ≥1 alnum.
+func validSessID(uid string) bool {
+	if !uuidRe.MatchString(uid) {
+		return false
+	}
+	for i := 0; i < len(uid); i++ {
+		c := uid[i]
+		if (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') {
+			return true
+		}
+	}
+	return false
+}
 
 // NetState mirrors fileshare.py NET_STATE.
 type NetState struct {

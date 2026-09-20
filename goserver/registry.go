@@ -380,6 +380,7 @@ func shareJSON(e *shareEntry) map[string]interface{} {
 //     via the file manager appears without a restart.
 //   - Any live entry whose managed HostPath vanished is pruned, so an
 //     external delete disappears instead of lingering as unavailable.
+//
 // Incomplete guest sessions (no HostPath yet) are never pruned here.
 func syncTempLive() {
 	base := tempBase()
@@ -2123,12 +2124,39 @@ func handleAPIBrowse(w http.ResponseWriter, r *http.Request) {
 func handleAPIPresence(w http.ResponseWriter, r *http.Request) {
 	data := readJSONBody(r, jsonSmallMax)
 	ownerID := strings.TrimSpace(jStr(data, "owner_id"))
-	if ownerID == "" {
+	if ownerID == "" || len(ownerID) > 128 {
 		shareFail(w, r, 400, "share_bad_path")
 		return
 	}
+	// Bound owner_id charset: prevents memory-DoS via giant/odd keys.
+	for i := 0; i < len(ownerID); i++ {
+		c := ownerID[i]
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '-' || c == '_') {
+			shareFail(w, r, 400, "share_bad_path")
+			return
+		}
+	}
 	name := strings.TrimSpace(jStr(data, "name"))
+	if len(name) > 120 {
+		name = string([]rune(name)[:120])
+	}
 	regMu.Lock()
+	// Evict stale entries so the map can't grow unbounded from spoofed IDs.
+	if len(presence) >= 5000 {
+		now := nowUnix()
+		for k, v := range presence {
+			if now-v.LastSeen > float64(presenceTTLsec)*2 {
+				delete(presence, k)
+			}
+		}
+		// Still full: drop oldest arbitrary entry.
+		if len(presence) >= 5000 {
+			for k := range presence {
+				delete(presence, k)
+				break
+			}
+		}
+	}
 	presence[ownerID] = &presenceEntry{Name: name, LastSeen: nowUnix()}
 	regMu.Unlock()
 	// Throttled: heartbeats arrive every few seconds per guest — a full

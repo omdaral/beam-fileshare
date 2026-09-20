@@ -98,6 +98,7 @@ function sumTreeSizes(node){
 /* One-click whole-folder download: streams the virtual folder prefix as
    a single STORE zip via GET /api/folder.zip?prefix=... */
 function downloadFolderZip(prefix,baseName){
+  try{show($("msg"),T("zip_prep"),true);}catch(e){}
   var url="/api/folder.zip?prefix="+encodeURIComponent(prefix);
   var a=document.createElement("a");
   a.href=url;
@@ -107,7 +108,10 @@ function downloadFolderZip(prefix,baseName){
     if(typeof a.click==="function")a.click();
     else location.href=a.href;
   }catch(e){try{location.href=a.href;}catch(e2){}}
-  setTimeout(function(){try{document.body.removeChild(a);}catch(e3){}},2000);
+  setTimeout(function(){
+    try{document.body.removeChild(a);}catch(e3){}
+    try{show($("msg"),T("zip_start"),true);}catch(e4){}
+  },2000);
 }
 function renderShareNode(node,box,prefix){
   prefix=prefix||"";

@@ -54,6 +54,8 @@
 <div class="kv"><span class="k" data-i18n="net_addr">عنوان الدخول</span><span class="v" id="netAddr">…</span></div>
 <div class="kv"><span class="k" data-i18n="net_clients">الأجهزة المتصلة</span><span class="v" id="netClients">…</span></div>
 <div class="kv"><span class="k" data-i18n="net_mode">الوضع</span><span class="v" id="netMode">…</span></div>
+<div class="kv"><span class="k" data-i18n="tls_row">التشفير</span><span class="v mono-small" id="tlsNote" dir="ltr">HTTP</span></div>
+<div class="kv"><span class="k" data-i18n="tls_fp">بصمة الشهادة</span><span class="v mono-small" id="tlsFp" dir="ltr">—</span></div>
 <div class="kv"><span class="k" data-i18n="share_dir">مجلد المشاركة</span><span class="v mono-small" id="netShared" dir="ltr">…</span></div>
 <div class="kv"><span class="k" data-i18n="pretty_addr">عنوان سهل</span><span class="v mono-small" id="netPretty" dir="ltr">…</span></div>
 <div id="tempPanel" class="temp-panel">
@@ -65,6 +67,7 @@
 <p class="small idle-note" id="idleNote"></p>
 <div class="row">
 <button class="btn-outline" id="copyBtn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span data-i18n="copy_link">نسخ رابط الدخول</span></button>
+<button class="btn-gray" id="copyPathBtn" type="button"><span data-i18n="copy_path">نسخ المسار</span></button>
 </div>
 </div>
 <div class="panel qr-panel">
@@ -77,7 +80,7 @@
 <div id="qrFallback"><p data-i18n="qr_fallback_p">تعذر رسم رمز QR على هذا المتصفح. استخدم الرابط التالي مباشرة:</p><a id="qrLink" href="#">…</a><p class="small" id="qrText"></p><div class="row"><button class="btn-blue" id="copyBtn2"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span data-i18n="copy_link2">نسخ الرابط</span></button></div></div>
 <p class="small" data-i18n="qr_hint">امسح الرمز بكاميرا الموبايل للدخول بسرعة. يتحدث تلقائيا كل 10 ثوانٍ.</p>
 </div>
-<div id="netMsg" class="msg"></div>
+<div id="netMsg" class="msg" role="status" aria-live="polite"></div>
 </div>
 </div>
 </div>
@@ -122,7 +125,7 @@
 <div class="row" id="phoneHsRow" style="display:none"><button class="btn-blue" id="phoneHsBtn"><span data-i18n="hs_phone">هوتسبوت من هذا الهاتف</span></button><button class="btn-red hidden" id="phoneHsStopBtn"><span data-i18n="hs_phone_stop">إيقاف هوتسبوت الهاتف</span></button></div>
 <div class="kv hidden" id="phoneHsCreds"><span class="k" data-i18n="hs_phone_creds">بيانات شبكة الهاتف</span><span class="v" id="phoneHsCredsV" dir="ltr">…</span></div>
 <div id="phoneHsMsg" class="msg"></div>
-<div id="admMsg" class="msg"></div>
+<div id="admMsg" class="msg" role="status" aria-live="polite"></div>
 <div class="kv"><span class="k" data-i18n="caps">قدرة الهوتسبوت</span><span class="v" id="admCaps">…</span></div>
 </div>
 <div class="tab-panel" id="tabDevices" role="tabpanel">
@@ -133,7 +136,7 @@
 <h2 class="tab-title-spaced"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span data-i18n="log_title">السجل</span></h2>
 <pre class="log" id="logView">…</pre>
 <div class="row"><button class="btn-gray" id="logRefreshBtn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span data-i18n="log_refresh">تحديث السجل</span></button><button class="btn-red" id="logClearBtn"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg><span data-i18n="log_clear">مسح السجل</span></button></div>
-<div id="logMsg" class="msg"></div>
+<div id="logMsg" class="msg" role="status" aria-live="polite"></div>
 </div>
 <div class="tab-panel" id="tabGeneral" role="tabpanel">
 <p class="small" data-i18n="default_lang_note">تطبق اللغة على الزوار الجدد فور حفظها. لغتك الحالية تتغير فوراً من القائمة.</p>
@@ -147,7 +150,7 @@
 </select>
 <label class="f" for="cfgTemp" data-i18n="temp_dir_l">المجلد المؤقت (temp_dir)</label>
 <input type="text" id="cfgTemp" value="" maxlength="512" dir="ltr" class="ltr-field" autocomplete="off">
-<div id="cfgMsg" class="msg"></div>
+<div id="cfgMsg" class="msg" role="status" aria-live="polite"></div>
 <p class="small" data-i18n="cfg_local_note">تُحفظ الإعدادات تلقائياً عند التعديل (للجلسة الحالية فقط — بدون أي ملفات على الجهاز)، وتُحفظ نسخة في هذا المتصفح لإعادة تعبئتها تلقائياً.</p>
 </div>
 <div class="tab-panel" id="tabDevice" role="tabpanel">
@@ -162,7 +165,7 @@
 <div class="modal-head"><div><h2 id="browseTitle"><span data-i18n="browse_title">ملفات هذا الجهاز</span></h2></div><div class="spacer"></div><button id="browseClose" class="modal-x" type="button" data-i18n-aria="close" aria-label="إغلاق">×</button></div>
 <div class="row"><span id="browsePath" dir="ltr" class="browse-path">…</span></div>
 <div class="row"><button class="btn-gray" id="browseUp" type="button" style="display:none"><span data-i18n="browse_up">رجوع</span></button><button class="btn-green" id="browseShareHere" type="button"><span data-i18n="browse_here">مشاركة هذا المجلد</span></button></div>
-<div id="browseMsg" class="msg"></div>
+<div id="browseMsg" class="msg" role="status" aria-live="polite"></div>
 <div id="browseList"></div>
 </div>
 </div>
@@ -190,16 +193,17 @@
 
 <div class="card">
 <h2><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span data-i18n="files_down">الملفات المتاحة للتنزيل</span></h2>
-<input id="fileSearch" type="search" data-i18n-ph="search_ph" placeholder="ابحث في الملفات والمجلدات..." autocomplete="off">
+<label class="sr-only" for="fileSearch" data-i18n="search_ph">ابحث في الملفات والمجلدات...</label>
+<input id="fileSearch" type="search" data-i18n-ph="search_ph" placeholder="ابحث في الملفات والمجلدات..." autocomplete="off" aria-label="ابحث في الملفات والمجلدات...">
 <div class="seg" id="dlModeSeg" style="display:none"><button id="modeRelDl" class="active"><span data-i18n="mode_reliable">موثوق</span></button><button id="modeTurboDl"><span data-i18n="mode_turbo">تيربو</span></button></div>
 <p class="small" data-i18n="mode_dl_note" style="display:none">زر ⚡ يستخدم الوضع المحدد: الموثوق يحفظ التقدم وقابل للاستكمال، والتيربو أسرع بلا حفظ.</p>
-<div id="msg" class="msg"></div>
+<div id="msg" class="msg" role="status" aria-live="polite"></div>
 <div id="files"><p data-i18n="loading">جاري التحميل...</p></div>
 </div>
 
 <div class="card">
 <h2><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span data-i18n="sess_title">جلسات الرفع القابلة للاستكمال</span></h2>
-<div id="sessMsg" class="msg"></div>
+<div id="sessMsg" class="msg" role="status" aria-live="polite"></div>
 <div id="sessions"><p data-i18n="loading2">جاري التحميل...</p></div>
 <p class="small" data-i18n="sess_hint">رفع انقطع؟ دوس استكمال ثم أعد اختيار نفس الملف وسيكمل تلقائياً من حيث توقف — صاحب الجهاز ملفاته من القرص مباشرة بدون استكمال.</p>
 </div>

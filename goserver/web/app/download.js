@@ -133,11 +133,14 @@ function idbHave(db,prefix,n){
 }
 function fastDownload(name,size,mtime,rowEl,saveName){
   var dispName=(typeof saveName!=="undefined"&&saveName)?saveName:((isShareName(name))?baseNameOf(name):name);
-  // RAM guard: fast path buffers whole file (Blob). Warn above 200MB.
+  // RAM guard: fast path buffers whole file (Blob). Above warn threshold,
+  // prefer memory-safe direct download automatically instead of blocking
+  // confirm() — user can still pick fast from the row button.
   try{
     if(size>CONFIG.DL_FAST_WARN){
-      var msg=T("dl_big_warn")!=="dl_big_warn"?T("dl_big_warn"):((LANG==="en"?"Large file ":"ملف كبير ")+fmt(size)+" — قد يستهلك ذاكرة المتصفح. المتابعة؟");
-      if(!window.confirm(msg)){return;}
+      directDownload(name,dispName);
+      try{show($("msg"),T("dl_big")+" ("+fmt(size)+") — "+T("dl_direct"),true);}catch(e){}
+      return;
     }
   }catch(e){}
   activeDownloads++;

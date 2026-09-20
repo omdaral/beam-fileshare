@@ -53,21 +53,30 @@ var vendorContentTypes = map[string]string{
 }
 
 // serveIndexBody serves the single embedded page, with dev override:
-// index.html next to the binary wins when present.
+// index.html next to the binary wins when present (unless disabled via
+// BEAM_ALLOW_DISK_UI=0 — prevents local malware from hijacking the LAN UI).
+func allowDiskUI() bool {
+	if v := os.Getenv("BEAM_ALLOW_DISK_UI"); v == "0" || v == "false" || v == "no" {
+		return false
+	}
+	return true
+}
 func serveIndexBody() []byte {
-	p := filepath.Join(BaseDir, "index.html")
-	if st, err := os.Stat(p); err == nil {
-		mt := st.ModTime().UnixNano()
-		diskMu.Lock()
-		defer diskMu.Unlock()
-		if diskPages["index"] == nil || mt != diskPageMT["index"] {
-			if body, err := os.ReadFile(p); err == nil {
-				diskPages["index"] = body
-				diskPageMT["index"] = mt
+	if allowDiskUI() {
+		p := filepath.Join(BaseDir, "index.html")
+		if st, err := os.Stat(p); err == nil {
+			mt := st.ModTime().UnixNano()
+			diskMu.Lock()
+			defer diskMu.Unlock()
+			if diskPages["index"] == nil || mt != diskPageMT["index"] {
+				if body, err := os.ReadFile(p); err == nil {
+					diskPages["index"] = body
+					diskPageMT["index"] = mt
+				}
 			}
-		}
-		if diskPages["index"] != nil {
-			return diskPages["index"]
+			if diskPages["index"] != nil {
+				return diskPages["index"]
+			}
 		}
 	}
 	return indexHTML
@@ -136,7 +145,8 @@ func handleVendor(w http.ResponseWriter, r *http.Request) {
 
 // handleApp serves split UI files (/app/style.css, /app/app.js).
 // No bundler: same go:embed, ordered <script> tags in index.html.
-// Dev override: <BaseDir>/app/<name> wins when present (like index.html).
+// Dev override: <BaseDir>/app/<name> wins when present (like index.html),
+// unless BEAM_ALLOW_DISK_UI=0.
 func handleApp(w http.ResponseWriter, r *http.Request) {
 	name := strings.TrimPrefix(r.URL.Path, "/app/")
 	ctype, ok := appContentTypes[name]
@@ -144,19 +154,21 @@ func handleApp(w http.ResponseWriter, r *http.Request) {
 		sendEmpty(w, r, 404)
 		return
 	}
-	if p := filepath.Join(BaseDir, "app", name); true {
-		if st, err := os.Stat(p); err == nil && st.Mode().IsRegular() {
-			if body, err := os.ReadFile(p); err == nil {
-				setSecurityHeaders(w, false)
-				w.Header().Set("Content-Type", ctype)
-				w.Header().Set("Content-Length", strconv.FormatInt(int64(len(body)), 10))
-				w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
-				w.WriteHeader(200)
-				if r.Method == "HEAD" {
+	if allowDiskUI() {
+		if p := filepath.Join(BaseDir, "app", name); true {
+			if st, err := os.Stat(p); err == nil && st.Mode().IsRegular() {
+				if body, err := os.ReadFile(p); err == nil {
+					setSecurityHeaders(w, false)
+					w.Header().Set("Content-Type", ctype)
+					w.Header().Set("Content-Length", strconv.FormatInt(int64(len(body)), 10))
+					w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
+					w.WriteHeader(200)
+					if r.Method == "HEAD" {
+						return
+					}
+					_, _ = w.Write(body)
 					return
 				}
-				_, _ = w.Write(body)
-				return
 			}
 		}
 	}
@@ -199,7 +211,7 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 // + icons still give a full-screen home-screen app on Android/iOS.
 const installManifest = `{"name":"Beam","short_name":"Beam",` +
 	`"description":"Beam — مشاركة الملفات بين أجهزتك عبر شبكة خاصة",` +
-	`"start_url":"/","scope":"/","display":"standalone","dir":"rtl","lang":"ar",` +
+	`"start_url":"/","scope":"/","display":"standalone","dir":"auto","lang":"ar",` +
 	`"theme_color":"#F7F5F0","background_color":"#F7F5F0",` +
 	`"icons":[{"src":"/vendor/icon-192.png","sizes":"192x192","type":"image/png"},` +
 	`{"src":"/vendor/icon-512.png","sizes":"512x512","type":"image/png",` +

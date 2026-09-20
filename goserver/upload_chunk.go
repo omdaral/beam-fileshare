@@ -109,6 +109,13 @@ func handleUploadChunk(w http.ResponseWriter, r *http.Request) {
 	} else {
 		f.Close()
 	}
+	// Concurrent-writer guard: if another V1 chunk appended at the same
+	// time, the size won't match exactly — report 409 so the client
+	// re-syncs instead of silently corrupting data.part.
+	if final := sessReceived(uid); final != received+written {
+		sendJSON(w, r, 409, map[string]interface{}{"error": "offset", "offset": final})
+		return
+	}
 	touchSessDir(uid)
 	sendJSON(w, r, 200, map[string]interface{}{"id": uid, "offset": sessReceived(uid)})
 }

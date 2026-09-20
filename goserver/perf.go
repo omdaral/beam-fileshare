@@ -66,7 +66,24 @@ func setDownloadSemSize(n int) {
 		n = 256
 	}
 	downloadSemMu.Lock()
-	downloadSem = make(chan struct{}, n)
+	old := downloadSem
+	// Preserve live permits: move up to min(queued, n) into the new
+	// channel so resizing never leaks slots or lifts the bound.
+	next := make(chan struct{}, n)
+	drained := 0
+	for drained < n {
+		select {
+		case v := <-old:
+			select {
+			case next <- v:
+				drained++
+			default:
+			}
+		default:
+			drained = n
+		}
+	}
+	downloadSem = next
 	downloadMaxConc = n
 	downloadSemMu.Unlock()
 }

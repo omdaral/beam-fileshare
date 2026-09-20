@@ -2,6 +2,7 @@ package beamcore
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 )
@@ -11,12 +12,28 @@ var (
 	logLines []string
 )
 
+// sanitizeLogField strips newlines/pipes so SSIDs and OS errors can't
+// forge fake log lines or break parsers.
+func sanitizeLogField(s string) string {
+	s = strings.ReplaceAll(s, "\r", " ")
+	s = strings.ReplaceAll(s, "\n", " ")
+	s = strings.ReplaceAll(s, "|", "/")
+	s = strings.TrimSpace(s)
+	if len(s) > 300 {
+		r := []rune(s)
+		if len(r) > 300 {
+			s = string(r[:300])
+		}
+	}
+	return s
+}
+
 // writeLog appends one line to the in-memory ring (drops oldest past cap).
 // Alloc-free steady state: shifts in place instead of allocating a fresh
 // backing array on every line once full.
 func writeLog(ip, action, detail string) {
 	ts := time.Now().Format("2006-01-02 15:04:05")
-	line := ts + " | " + ip + " | " + action + " | " + detail
+	line := ts + " | " + sanitizeLogField(ip) + " | " + sanitizeLogField(action) + " | " + sanitizeLogField(detail)
 	logMu.Lock()
 	logLines = append(logLines, line)
 	if len(logLines) > memLogCap {

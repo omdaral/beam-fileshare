@@ -3,6 +3,35 @@
 All notable changes to Beam are documented here.
 The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.7.0] — 2026-09-20
+
+File-sharing hardening + easier UX. ~50 issues fixed (backend races/paths/limits, security validation, frontend simplicity). No protocol break: upload/download/zip/registry APIs unchanged.
+
+### Sharing core (backend)
+- `sessions`: `uploadsDir` never falls back to CWD; `sessDir` rejects dot-only ids (`validSessID`); `loadMeta` caps size + validates Size/PieceLen/Ranges/Bitmap/Hashes; `SweepUploads` skips live `sessToShare` staging.
+- `pieces`: `rangeAdd` clamps to session bounds; `zeroPiece` refuses symlinked `data.part`.
+- `sharepath/download`: `openSharedFile` returns live fd stat — ETag/Content-Length always match served bytes.
+- `upload_chunk` V1: concurrent-append guard returns 409 with live offset instead of silent corruption.
+- `perf`: `setDownloadSemSize` preserves live permits (no slot leak / bound bypass).
+- `registry`: `/api/presence` validates `owner_id` charset, caps at 5000 entries with stale eviction.
+
+### Security / admin
+- `net_admin`: hotspot SSID/password validated at parse time (8+ chars, no CR/LF, no leading-dash SSID).
+- `config_admin`: password length re-validated on save; `wifi_password` rejects control chars; `temp_dir` rejects filesystem roots (`/`, `/home`, `/root`, `/tmp`, …); `temp_dir` changes + log clears leave audit lines.
+- `hotspot`: open-network bringup uses one-time random password (no well-known `OpenNet00` on air); WinRT tethering rejects injected creds.
+- `cors`: only exact `beam.local` trusted (generic `*.local` no longer trusted/CORS-reflected).
+- `http`: API JSON responses carry `Cache-Control: no-store`; disk UI override gated by `BEAM_ALLOW_DISK_UI=0`; PWA manifest `dir: auto`.
+- `activity`: log lines sanitized (no newline/pipe forgery, 300-rune cap).
+- `i18n`: new server messages `pass_short` / `pass_bad_chars` / `bad_hotspot_cred`.
+
+### Easier app (frontend)
+- Missing `port_range` + new strings added (ar/en); TLS row actually renders (`tlsNote`/`tlsFp` show HTTP/HTTPS + fingerprint).
+- Server stop is now two-tap confirm; `beforeunload` warns while guest files are served from the browser.
+- `beforeunload`, `aria-live` on all status messages, labeled search field, `.sr-only` helper, `armed` stop styling.
+- Resume shows `name (size, %)` before re-pick; filenames use `direction:auto` (Arabic + numbers).
+- Large downloads auto-fall back to memory-safe direct download (no blocking `confirm()`); folder zips show preparing/started feedback.
+- Recent-ops capped (5 unpinned + 10 pinned) with Clear-all; nav toggle updates its label; copy-share-path button added.
+
 ## [Unreleased]
 
 ### Added

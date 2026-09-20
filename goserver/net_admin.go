@@ -29,6 +29,17 @@ func parseNetStart(data map[string]interface{}) (*netStartParams, string) {
 	if p.mode != "lan" && p.mode != "hotspot" {
 		return nil, "bad_mode"
 	}
+	p.ssid = validateSSID(p.ssid)
+	if p.mode == "hotspot" {
+		if !validHotspotCreds(p.ssid, p.password) {
+			return nil, "bad_hotspot_cred"
+		}
+		if !p.openNet {
+			if errKey := validateHotspotPassword(p.password, false); errKey != "" {
+				return nil, errKey
+			}
+		}
+	}
 	return p, ""
 }
 

@@ -45,8 +45,10 @@ func handleLogsClear(w http.ResponseWriter, r *http.Request) {
 	if !adminOnly(w, r) {
 		return
 	}
-	// Full wipe of the in-memory ring, no residue line.
+	// Full wipe of the in-memory ring, then an audit line so a stolen
+	// token can't silently erase forensics.
 	clearLog()
+	writeLog(clientIP(r), "logs_cleared", "by owner")
 	sendJSON(w, r, 200, map[string]interface{}{"ok": true, "msg": tr(reqLang(r), "logs_cleared")})
 }
 
@@ -112,9 +114,19 @@ func handleConfigPost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// Auto-save support: hotspot password + open-network flag persist to
-	// the session (length is validated at start time, not here).
+	// the session (length validated here too, not only at start time).
 	if raw, ok := data["password"]; ok {
 		if s, ok := raw.(string); ok {
+			if s != "" {
+				if errKey := validateHotspotPassword(s, false); errKey != "" {
+					fail(w, r, 400, errKey)
+					return
+				}
+				if !validHotspotCreds(c.WifiSSID, s) {
+					fail(w, r, 400, "bad_hotspot_cred")
+					return
+				}
+			}
 			c.WifiPassword = s
 			c.HotspotPassword = s
 		}
@@ -134,6 +146,10 @@ func handleConfigPost(w http.ResponseWriter, r *http.Request) {
 	}
 	if raw, ok := data["wifi_password"]; ok {
 		if s, ok := raw.(string); ok {
+			if s != "" && strings.ContainsAny(s, "\r\n\x00") {
+				fail(w, r, 400, "pass_bad_chars")
+				return
+			}
 			c.WifiPassword = s
 			c.HotspotPassword = s
 		}
@@ -181,6 +197,16 @@ func handleConfigPost(w http.ResponseWriter, r *http.Request) {
 				"error": tr(reqLang(r), "temp_need_abs"), "code": "temp_need_abs"})
 			return
 		}
+		// Harden temp_dir: reject filesystem roots and top-level system
+		// dirs even if shareBlocked misses a spelling.
+		low := strings.ToLower(s)
+		for _, blocked := range []string{"/", "/home", "/root", "/tmp", "/var", "/etc", "/usr", "/bin", "/sbin", "/boot", "/dev", "/proc", "/sys", "/run"} {
+			if low == blocked {
+				sendJSON(w, r, 403, map[string]interface{}{
+					"error": tr(reqLang(r), "share_blocked"), "code": "share_blocked"})
+				return
+			}
+		}
 		if shareBlocked(s) {
 			sendJSON(w, r, 403, map[string]interface{}{
 				"error": tr(reqLang(r), "share_blocked"), "code": "share_blocked"})
@@ -210,6 +236,9 @@ func handleConfigPost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	writeLog(clientIP(r), "config_save", "need_restart="+strconv.FormatBool(needRestart))
+	if _, ok := data["temp_dir"]; ok {
+		writeLog(clientIP(r), "config_temp_dir", Cfg.TempDir)
+	}
 	msg := tr(reqLang(r), "config_saved")
 	if needRestart {
 		msg += tr(reqLang(r), "config_restart_note")

@@ -88,6 +88,7 @@ func openSharedFile(rel string) (*os.File, os.FileInfo, string, error) {
 	if err != nil {
 		return nil, nil, "", err
 	}
+	_ = st
 	f, err := openSharedNoFollow(fpath)
 	if err != nil {
 		return nil, nil, "", err
@@ -97,5 +98,7 @@ func openSharedFile(rel string) (*os.File, os.FileInfo, string, error) {
 		f.Close()
 		return nil, nil, "", os.ErrNotExist
 	}
-	return f, st, fpath, nil
+	// Return the live fd stat (not the pre-open Lstat) so ETag and
+	// Content-Length always describe the bytes actually served.
+	return f, fst, fpath, nil
 }

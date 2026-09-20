@@ -23,12 +23,18 @@ type sessionMeta struct {
 }
 
 func uploadsDir() string {
+	if SharedDir == "" {
+		// Never fall back to CWD ".uploads" — use OS temp instead.
+		d := filepath.Join(os.TempDir(), "Beam-Temp", uploadsDirname)
+		_ = os.MkdirAll(d, 0755)
+		return d
+	}
 	d := filepath.Join(SharedDir, uploadsDirname)
 	_ = os.MkdirAll(d, 0755)
 	return d
 }
 func sessDir(uid string) string {
-	if !uuidRe.MatchString(uid) {
+	if !validSessID(uid) {
 		return ""
 	}
 	return filepath.Join(uploadsDir(), strings.ToLower(uid))
@@ -57,8 +63,15 @@ func loadMeta(uid string) *sessionMeta {
 	if err != nil {
 		return nil
 	}
+	// Cap meta size: crafted meta.json with huge Ranges must not OOM.
+	if len(data) > 4<<20 {
+		return nil
+	}
 	var m sessionMeta
 	if err := json.Unmarshal(data, &m); err != nil {
+		return nil
+	}
+	if !validMeta(&m) {
 		return nil
 	}
 	return &m
@@ -124,10 +137,14 @@ func SweepUploads() {
 	if err != nil {
 		return
 	}
+	live := liveSessionIDs()
 	now := nowUnix()
 	for _, e := range entries {
 		if !e.IsDir() {
 			continue
+		}
+		if live[strings.ToLower(e.Name())] {
+			continue // active guest share staging — never sweep
 		}
 		p := filepath.Join(root, e.Name())
 		st, err := os.Stat(p)
@@ -146,4 +163,54 @@ func touchSessDir(uid string) {
 		now := time.Now()
 		_ = os.Chtimes(sdir, now, now)
 	}
+}
+
+// validMeta rejects crafted meta.json (negative sizes, absurd ranges,
+// bitmap/hash length mismatches) before it can pollute accounting.
+func validMeta(m *sessionMeta) bool {
+	if m == nil {
+		return false
+	}
+	if m.Size < 0 || m.Size > maxZipBytes*16 {
+		return false
+	}
+	if m.V == 2 && (m.PieceLen <= 0 || m.PieceLen > int64(chunkMaxV2)) {
+		return false
+	}
+	if len(m.Ranges) > 10000 {
+		return false
+	}
+	for _, r := range m.Ranges {
+		if r[0] < 0 || r[1] < r[0] || r[1] > m.Size+1 {
+			return false
+		}
+	}
+	if m.V == 2 {
+		n := 0
+		if m.Size > 0 && m.PieceLen > 0 {
+			n = int((m.Size + m.PieceLen - 1) / m.PieceLen)
+		}
+		if n > maxSessionPieces {
+			return false
+		}
+		if len(m.Bitmap) != 0 && len(m.Bitmap) != n {
+			return false
+		}
+		if len(m.Hashes) > n+1 {
+			return false
+		}
+	}
+	return true
+}
+
+// liveSessionIDs returns session ids referenced by the share registry
+// so SweepUploads never deletes staging for an active guest share.
+func liveSessionIDs() map[string]bool {
+	regMu.Lock()
+	defer regMu.Unlock()
+	out := map[string]bool{}
+	for k := range sessToShare {
+		out[strings.ToLower(k)] = true
+	}
+	return out
 }

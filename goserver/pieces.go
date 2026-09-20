@@ -42,6 +42,21 @@ func missingPieces(m *sessionMeta) []int {
 	return out
 }
 func rangeAdd(m *sessionMeta, s, e int64) {
+	// Clamp to session bounds: ignore invalid/empty spans.
+	if m == nil || e <= s {
+		return
+	}
+	if s < 0 {
+		s = 0
+	}
+	if m.Size > 0 {
+		if s > m.Size {
+			return
+		}
+		if e > m.Size {
+			e = m.Size
+		}
+	}
 	ranges := [][2]int64{}
 	for _, r := range m.Ranges {
 		ranges = append(ranges, r)
@@ -172,7 +187,23 @@ func verifyPiece(uid string, m *sessionMeta, index int) bool {
 	return hex.EncodeToString(h.Sum(nil)) == want
 }
 func zeroPiece(uid string, m *sessionMeta, index int) {
+	if !validSessID(uid) {
+		return
+	}
 	s, e := pieceRange(m, index)
+	partPath := filepath.Join(sessDir(uid), "data.part")
+	// Refuse to zero through a symlink: data.part must be a regular file.
+	if st, err := os.Lstat(partPath); err != nil || st.Mode()&os.ModeSymlink != 0 || !st.Mode().IsRegular() {
+		if err == nil {
+			return
+		}
+		// Missing file: nothing to zero, just clear accounting below.
+		if !os.IsNotExist(err) {
+			return
+		}
+		markPiece(uid, m, index, false)
+		return
+	}
 	f, err := os.OpenFile(filepath.Join(sessDir(uid), "data.part"), os.O_WRONLY, 0644)
 	if err != nil {
 		return

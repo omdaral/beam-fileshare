@@ -1,6 +1,8 @@
 package beamcore
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"strings"
 )
 
@@ -45,7 +47,14 @@ func bringUpWindows(ssid, password, lang string) (bool, string) {
 func bringUpLinuxHotspot(ssid, password string, openNet bool, lang string, usePkexec bool) string {
 	pw := password
 	if pw == "" {
-		pw = "OpenNet00"
+		// Open-network path: use a one-time random password so there is
+		// never a documented well-known password on the air, even briefly.
+		var rb [8]byte
+		if _, err := rand.Read(rb[:]); err == nil {
+			pw = "Beam" + hex.EncodeToString(rb[:])
+		} else {
+			pw = "BeamOpenTmp00!"
+		}
 	}
 	code, out, errStr := runCmdPkexec([]string{"nmcli", "device", "wifi", "hotspot",
 		"con-name", "Hotspot", "ssid", ssid, "password", pw}, cmdTimeout, lang, usePkexec)

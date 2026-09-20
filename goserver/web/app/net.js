@@ -91,12 +91,12 @@ function renderStatus(j){
     var tlsOn=!!(j&&j.tls);
     var fpEl=$("tlsFp");
     if(fpEl){
-      if(fp)fpEl.textContent=((typeof T!=="undefined")?T("tls_fp"): "Cert fingerprint")+": "+fp;
-      else fpEl.textContent="";
-      fpEl.style.display=fp?"":"none";
+      if(tlsOn&&fp)fpEl.textContent=fp;
+      else if(tlsOn)fpEl.textContent=T("tls_note");
+      else fpEl.textContent="HTTP";
     }
     var tlsN=$("tlsNote");
-    if(tlsN)tlsN.style.display=tlsOn?"":"none";
+    if(tlsN)tlsN.textContent=tlsOn?("HTTPS"):("HTTP");
   }catch(e){}
   if(!owner&&settingsOpen)closeSettings();
   if(owner){
@@ -144,6 +144,20 @@ function bindStopBtn(id,msgId){
   var b=$(id);if(!b||b.dataset.bound)return;b.dataset.bound="1";
   b.onclick=function(){
     if(b.dataset.done==="1")return;
+    // Two-tap confirm: first tap arms, second tap stops (was instant).
+    if(b.dataset.armed!=="1"){
+      b.dataset.armed="1";
+      var orig=b.innerHTML;
+      b.dataset.orig=orig;
+      b.classList.add("armed");
+      try{b.setAttribute("aria-label",T("srv_stop_armed"));}catch(e){}
+      var m0=$(msgId);if(m0)show(m0,T("srv_stop_armed"),true);
+      setTimeout(function(){b.dataset.armed="";b.classList.remove("armed");
+        try{if(b.dataset.orig)b.innerHTML=b.dataset.orig;}catch(e2){}},4000);
+      return;
+    }
+    b.dataset.armed="";b.classList.remove("armed");
+    try{if(b.dataset.orig)b.innerHTML=b.dataset.orig;}catch(e3){}
     b.dataset.done="1";
     b.classList.add("stopped");
     var m=$(msgId);

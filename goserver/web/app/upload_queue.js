@@ -129,14 +129,19 @@ function recentBox(){
   r=document.createElement("div");r.id="recentStrip";
   var h=document.createElement("div");h.className="recent-head";
   var s=document.createElement("span");s.setAttribute("data-i18n","recent_ops");s.textContent=T("recent_ops");
-  h.appendChild(s);r.appendChild(h);
+  h.appendChild(s);
+  var clr=document.createElement("button");clr.className="btn-gray mini";setBtn(clr,ICONS.x,T("clear_all"));
+  clr.onclick=function(){try{r.innerHTML="";h.appendChild(s);h.appendChild(clr);r.appendChild(h);}catch(e){}};
+  h.appendChild(clr);r.appendChild(h);
   box.insertBefore(r,box.firstChild);
   return r;
 }
 function pruneRecent(){
   var rb=document.getElementById("recentStrip");
   if(!rb||!rb.querySelectorAll)return;
-  var rows=rb.querySelectorAll(".up-row"),alive=[];
-  for(var i=0;i<rows.length;i++)if(!rows[i].dataset.pin)alive.push(rows[i]);
+  var rows=rb.querySelectorAll(".up-row"),alive=[],pinned=[];
+  for(var i=0;i<rows.length;i++){if(!rows[i].dataset.pin)alive.push(rows[i]);else pinned.push(rows[i]);}
   while(alive.length>RECENT_MAX){var old=alive.shift();try{rb.removeChild(old);}catch(e){}}
+  // Cap pinned failures too (was unbounded): keep newest 10.
+  while(pinned.length>10){var p=pinned.shift();try{rb.removeChild(p);}catch(e){}}
 }

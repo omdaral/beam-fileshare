@@ -180,6 +180,10 @@ pre.log{background:#141210!important;color:#D6CFC0;border:1px solid #2E2820;bord
 .files-section .card:last-child{margin-bottom:0}
 #drop{border-width:2px;padding:clamp(1.5rem,7vw,2.75rem) clamp(1rem,4vw,1.25rem)}
 .file{background:var(--input-bg);border:1px solid var(--line);border-radius:.75rem;padding:.75rem .875rem;margin:.5rem 0}
+/* Filenames: auto direction so Arabic + numbers render correctly. */
+.file .name,.browse-path,#files .name,#sessions .name{direction:auto;unicode-bidi:plaintext;word-break:break-all;overflow-wrap:anywhere}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+button.armed,.btn-red.armed{outline:3px solid var(--acc);filter:brightness(1.1)}
 /* help section + footer */
 .help-section{background:#211510;color:#F7F5F0}
 [data-theme="dark"] .help-section{background:#0E0B09}

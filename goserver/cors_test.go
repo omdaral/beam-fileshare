@@ -9,18 +9,22 @@ func TestTrustedAppOrigin(t *testing.T) {
 	for _, ok := range []string{
 		"capacitor://localhost",
 		"ionic://localhost",
-		"https://localhost", // Capacitor 8 default androidScheme serves the app here
+		"https://localhost",      // Capacitor 8 default androidScheme serves the app here
 		"https://localhost:3000", // dev + iOS WebView variations
 		"https://127.0.0.1:2004", // loopback over self-signed HTTPS
 		"http://localhost:8100",
 		"http://127.0.0.1:2004",
 		"http://beam.local:2004",
 		"https://beam.local:2004",
-		"http://myphone.local:2004",
 	} {
 		if !trustedAppOrigin(ok) {
 			t.Fatalf("expected trusted origin %q", ok)
 		}
+	}
+	// Generic *.local names are NOT trusted (mDNS-spoofable) — only the
+	// exact beam.local name is allowed.
+	if trustedAppOrigin("http://myphone.local:2004") {
+		t.Fatalf("generic .local origin must be untrusted")
 	}
 	for _, bad := range []string{
 		"https://evil.example.com",

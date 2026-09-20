@@ -17,6 +17,10 @@ function autoRefresh(){
 }
 $("copyBtn").onclick=function(){copyText(lastUrl||baseUrl());};
 $("copyBtn2").onclick=function(){copyText(lastUrl||baseUrl());};
+var cpb=$("copyPathBtn");if(cpb)cpb.onclick=function(){
+  var t="";try{t=$("netShared").textContent||"";}catch(e){}
+  if(t&&t!=="…")copyText(t); else copyText(lastUrl||baseUrl());
+};
 var hcb=$("heroCopyBtn");if(hcb)hcb.onclick=function(){copyText(lastUrl||baseUrl());};
 $("qrWifiBtn").onclick=function(){qrMode="wifi";updateQR();};
 $("qrUrlBtn").onclick=function(){qrMode="url";updateQR();};
@@ -89,6 +93,13 @@ drop.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.p
 drop.addEventListener("drop",function(e){if(e.dataTransfer)collectDrop(e.dataTransfer);});
 
 /* ---------- بدء التشغيل: دخول مباشر بدون كود + تحديث تلقائي ---------- */
+// Warn before leaving while guest files are served from this browser.
+window.addEventListener("beforeunload",function(e){
+  try{
+    if(typeof sharePending!=="undefined"&&sharePending>0){e.preventDefault();e.returnValue=T("keep_open_warn");return T("keep_open_warn");}
+    if(typeof relayActive==="function"&&relayActive()){e.preventDefault();e.returnValue=T("keep_open_warn");return T("keep_open_warn");}
+  }catch(e2){}
+});
 (function initSettingsModal(){
   var sb=$("settingsBtn");
   if(sb)sb.onclick=function(){openSettings();};
@@ -119,7 +130,9 @@ try{
   if(nt&&mn){
     nt.onclick=function(e){
       if(e&&e.stopPropagation){try{e.stopPropagation();}catch(e2){}}
-      setNav(!mn.classList.contains("open"));
+      var open=!mn.classList.contains("open");
+      setNav(open);
+      try{nt.setAttribute("aria-label",open?T("close"):T("nav_join"));}catch(e3){}
     };
     mn.addEventListener("click",function(e){
       if(e.target&&e.target.tagName==="A")setNav(false);

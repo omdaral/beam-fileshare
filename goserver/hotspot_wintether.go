@@ -36,6 +36,9 @@ func winPS(script string, timeout time.Duration, lang string) (int, string, stri
 		"-Command", script}, timeout, lang)
 }
 func winTetherStart(ssid, password, lang string) (bool, string) {
+	if !validHotspotCreds(ssid, password) {
+		return false, tr(lang, "bad_hotspot_cred")
+	}
 	script := psTetherPreamble +
 		`$_c=New-Object Windows.Networking.NetworkOperators.` +
 		`NetworkOperatorTetheringAccessPointConfiguration;` +
