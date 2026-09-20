@@ -32,32 +32,29 @@ cp packaging/flatpak/com.beam.beam.metainfo.xml "$AD/usr/share/metainfo/" 2>/dev
 chmod +x "$AD/usr/bin/Beam"
 # AppRun: the server runs in the FOREGROUND (clean shutdown, mount stays),
 # only the browser opens in the background. Fixed port 2004, no side files.
+# Scheme mirrors the server default (goserver/cmd/beam/main.go): plain HTTP
+# unless TLS is requested via --tls or BEAM_TLS=1 (then self-signed HTTPS).
 cat > "$AD/AppRun" <<'EOF'
 #!/bin/bash
 HERE="$(dirname "$(readlink -f "$0")")"
 PORT=2004
 NO_BROWSER=0
-NO_TLS=0
+SCHEME="http"
+TLS_ARGS=()
+case "${BEAM_TLS:-}" in 1|true|TRUE|yes|YES|on|ON) SCHEME="https"; TLS_ARGS=(--tls) ;; esac
 while [ $# -gt 0 ]; do
   case "$1" in
     --port) PORT="${2:-2004}"; shift 2 ;;
     --no-browser) NO_BROWSER=1; shift ;;
-    --no-tls) NO_TLS=1; shift ;;
+    --tls) SCHEME="https"; TLS_ARGS=(--tls); shift ;;
+    --no-tls) SCHEME="http"; TLS_ARGS=(); shift ;;
     *) shift ;;
   esac
 done
-# Scheme must match the server default (self-signed HTTPS unless disabled).
-SCHEME="https"
-if [ "$NO_TLS" = "1" ]; then SCHEME="http"; else
-  case "${BEAM_TLS:-}" in 0|false|FALSE|no|NO|off|OFF) SCHEME="http" ;; esac
-fi
 if [ "$NO_BROWSER" = "0" ] && command -v xdg-open >/dev/null 2>&1; then
   xdg-open "$SCHEME://127.0.0.1:$PORT" >/dev/null 2>&1 &
 fi
-if [ "$NO_TLS" = "1" ]; then
-  exec "$HERE/usr/bin/Beam" --port "$PORT" --no-browser --no-tls
-fi
-exec "$HERE/usr/bin/Beam" --port "$PORT" --no-browser
+exec "$HERE/usr/bin/Beam" --port "$PORT" --no-browser "${TLS_ARGS[@]}"
 EOF
 chmod +x "$AD/AppRun"
 cat > "$AD/beam.desktop" <<EOF

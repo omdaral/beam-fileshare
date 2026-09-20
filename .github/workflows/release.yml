@@ -220,6 +220,10 @@ jobs:
 
   finalize:
     needs: [build, android]
+    # The desktop release must not die with the Android toolchain: publish
+    # everything the build job produced as long as IT succeeded, even if
+    # the android job failed (APK is optional, desktop is not).
+    if: ${{ always() && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
