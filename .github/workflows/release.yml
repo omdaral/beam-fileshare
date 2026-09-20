@@ -45,7 +45,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.23"
+          go-version: "1.26"
           cache-dependency-path: goserver/go.sum
 
       # build scripts force GOPROXY=off, so pre-fill the module cache first.
@@ -169,7 +169,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.23"
+          go-version: "1.26"
           cache-dependency-path: goserver/go.sum
 
       - name: Set up JDK 21
@@ -219,7 +219,7 @@ jobs:
       - name: Install + init gomobile
         run: |
           export PATH="$HOME/go/bin:$HOME/gopath/bin:$PATH"
-          GOPROXY="https://proxy.golang.org,direct" GOTOOLCHAIN=auto go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20231127183840-76ac6878050a
+          GOPROXY="https://proxy.golang.org,direct" GOTOOLCHAIN=auto go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20260908204917-8b95e45f8d3e
           NDK_DIR="$(ls -d "$ANDROID_HOME"/ndk/* | sort -V | tail -1)"
           echo "NDK: $NDK_DIR"
           # Newer gomobile dropped the -ndk flag (NDK via ANDROID_NDK_HOME);

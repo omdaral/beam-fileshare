@@ -10,7 +10,7 @@ cd "$APP_DIR" || exit 1
 source "$APP_DIR/packaging/common/lib.sh"
 export PATH="$HOME/go/bin:/usr/local/go/bin:/opt/go/bin:$PATH"
 export GOPROXY=off
-export GOTOOLCHAIN=local
+export GOTOOLCHAIN=auto
 mkdir -p "$APP_DIR/dist"
 BUILDLOG="${BEAM_BUILDLOG:-/tmp/beam-build.log}"
 : >>"$BUILDLOG" 2>/dev/null || BUILDLOG="$APP_DIR/build.log"

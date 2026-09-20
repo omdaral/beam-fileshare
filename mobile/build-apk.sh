@@ -7,7 +7,7 @@ set -u
 cd "$(dirname "$0")" || exit 1
 export PATH="$HOME/go/bin:$HOME/gopath/bin:/usr/local/go/bin:$PATH"
 export GOPATH="${GOPATH:-$HOME/gopath}"
-export GOTOOLCHAIN=local
+export GOTOOLCHAIN=auto
 export GOPROXY=off
 
 command -v node >/dev/null 2>&1 || { echo "❌ node غير مثبت (https://nodejs.org)"; exit 1; }
@@ -51,7 +51,7 @@ if ! command -v gomobile >/dev/null 2>&1; then
   command -v go >/dev/null 2>&1 || { echo "❌ ثبّت Go 1.22+ أولاً (https://go.dev/dl)"; exit 1; }
   # Pinned for reproducible builds (update with VERSION bumps).
   (cd ../goserver && GOPROXY="https://proxy.golang.org,direct" GOTOOLCHAIN=auto \
-    go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20231127183840-76ac6878050a) || { echo "❌ فشل تثبيت gomobile (تحقق من الإنترنت ثم أعد المحاولة)"; exit 1; }
+    go install golang.org/x/mobile/cmd/gomobile@v0.0.0-20260908204917-8b95e45f8d3e) || { echo "❌ فشل تثبيت gomobile (تحقق من الإنترنت ثم أعد المحاولة)"; exit 1; }
   GOBIN_CANDIDATES="$HOME/gopath/bin:$HOME/go/bin"
   for d in ${GOBIN_CANDIDATES//:/ }; do
     [ -x "$d/gomobile" ] && export PATH="$d:$PATH" && break
