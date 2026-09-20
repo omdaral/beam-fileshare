@@ -210,8 +210,19 @@ jobs:
           sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0" "ndk;26.3.11579264"
           sdkmanager --list_installed | tail -n 8
 
-      - name: Download Go modules
-        run: go -C goserver mod download
+      # One shared module cache for every Go step below: build-apk.sh
+      # defaults GOPATH to $HOME/gopath, so warm THAT cache here (the
+      # default ~/go cache would leave bind's `go list` cold, and it runs
+      # under GOPROXY=off where a cold cache is fatal).
+      - name: Set shared GOPATH
+        run: |
+          echo "GOPATH=$HOME/gopath" >> "$GITHUB_ENV"
+          echo "$HOME/gopath/bin" >> "$GITHUB_PATH"
+
+      - name: Download Go modules (incl. x/mobile sources for bind)
+        run: |
+          go -C goserver mod download
+          go -C goserver mod download golang.org/x/mobile
 
       # build-apk.sh installs gomobile itself but runs `gomobile init`
       # silently with GOPROXY=off, which hides network failures and breaks
