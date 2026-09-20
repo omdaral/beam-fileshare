@@ -19,7 +19,7 @@ Your files live in one place you know (`Downloads/Beam`), settings apply to the 
 > Download from **GitHub Releases** (no build needed). One-click script or direct link — both give the same files:
 >
 > ```bash
-> curl -sSL https://raw.githubusercontent.com/AhmedFaseh/beam-fileshare/main/get-beam.sh | bash
+> curl -sSL https://raw.githubusercontent.com/AhmedFaseh/beam-fileshare/main/get-beam.sh | bash -s -- --install
 > ```
 >
 > Or open the full list with checksums: [DOWNLOAD.md](DOWNLOAD.md) · [Releases page](https://github.com/AhmedFaseh/beam-fileshare/releases/latest).

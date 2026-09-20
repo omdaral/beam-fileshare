@@ -14,7 +14,7 @@ This is the central help file (Arabic + English). For the full install guide see
 - Easiest way (auto-detects your OS/arch):
   أسهل طريقة (تكتشف نظامك تلقائياً):
   ```bash
-  curl -sSL https://raw.githubusercontent.com/AhmedFaseh/beam-fileshare/main/get-beam.sh | bash
+  curl -sSL https://raw.githubusercontent.com/AhmedFaseh/beam-fileshare/main/get-beam.sh | bash -s -- --install
   ```
 - Manual: open [DOWNLOAD.md](DOWNLOAD.md) or the [Releases page](https://github.com/AhmedFaseh/beam-fileshare/releases/latest) and pick your row (Windows / Linux / Mac × amd64/arm64, Android APK, or system packages).
   يدوياً: افتح [DOWNLOAD.md](DOWNLOAD.md) أو [صفحة Releases](https://github.com/AhmedFaseh/beam-fileshare/releases/latest) واختر صف نظامك.

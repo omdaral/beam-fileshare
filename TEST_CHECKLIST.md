@@ -5,6 +5,7 @@
 ## 0) General setup (before every item)
 - [ ] Download check: every asset in DOWNLOAD.md resolves (HTTP 200) — 6 portables + APK + deb/AppImage/rpm + SHA256SUMS + MANIFEST.json
 - [ ] `bash -n get-beam.sh` passes, and `bash get-beam.sh --no-extract --dir /tmp/beam-dl-test` downloads the correct file for this machine
+- [ ] `bash get-beam.sh --install --dir /tmp/beam-install-test` installs into the dir, runs install.sh, and leaves no archive/temp behind (`ls /tmp/beam-dl-*` empty afterwards)
 - [ ] Server is running: `./Beam --port 2004` (or `go -C goserver run . --port 2004`) and prints `http://IP:2004` links
 - [ ] At startup: prints **device entry link** + shows a system notification with it (Linux)
 - [ ] Beam page on the host machine: entry hero in large type at the top of the page + working copy button + ⚙️ Settings button visible in the header

@@ -16,7 +16,7 @@
 > التحميل من **GitHub Releases** (بدون أوامر بناء). سكربت بنقرة واحدة أو رابط مباشر — نفس الملفات:
 >
 > ```bash
-> curl -sSL https://raw.githubusercontent.com/AhmedFaseh/beam-fileshare/main/get-beam.sh | bash
+> curl -sSL https://raw.githubusercontent.com/AhmedFaseh/beam-fileshare/main/get-beam.sh | bash -s -- --install
 > ```
 >
 > أو افتح القائمة الكاملة مع البصمات: [DOWNLOAD.md](DOWNLOAD.md) · [صفحة Releases](https://github.com/AhmedFaseh/beam-fileshare/releases/latest).

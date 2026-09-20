@@ -4,7 +4,7 @@
 > تثبيت بنقرة واحدة (يكتشف نظامك تلقائياً):
 >
 > ```bash
-> curl -sSL https://raw.githubusercontent.com/AhmedFaseh/beam-fileshare/main/get-beam.sh | bash
+> curl -sSL https://raw.githubusercontent.com/AhmedFaseh/beam-fileshare/main/get-beam.sh | bash -s -- --install
 > ```
 >
 > Or pick your file manually below. All files live on the [Releases page](https://github.com/AhmedFaseh/beam-fileshare/releases/latest) with `SHA256SUMS` + `MANIFEST.json` for verification.
