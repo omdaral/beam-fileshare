@@ -243,6 +243,11 @@ jobs:
             GOPROXY="https://proxy.golang.org,direct" gomobile init
           fi
 
+      # apply-android-src.py step_icons needs PIL, and each job is a fresh
+      # VM (the build job's Pillow is not visible here).
+      - name: Install Pillow (APK icons need PIL)
+        run: pip3 install --quiet --break-system-packages pillow || pip3 install --quiet pillow
+
       # Non-fatal like publish.sh step 9: without a working Android toolchain
       # the APK is skipped with a warning and the rest of the release goes on.
       - name: 9/10 Build APK
