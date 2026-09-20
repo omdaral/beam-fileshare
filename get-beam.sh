@@ -2,13 +2,13 @@
 # Beam — one-click downloader (auto-detects OS/arch, downloads the right asset).
 # Usage:
 #   curl -sSL https://raw.githubusercontent.com/AhmedFaseh/beam-fileshare/main/get-beam.sh | bash
-#   bash get-beam.sh [--version 1.6.0] [--dir ./beam] [--no-extract] [--help]
+#   bash get-beam.sh [--version 1.7.0] [--dir ./beam] [--no-extract] [--help]
 # Detects: Linux/macOS/Windows(Git-Bash/MSYS/Cygwin/WSL) x amd64/arm64.
 # Downloads from GitHub Releases (no build tools needed). stdlib only: sh + curl/wget + tar/unzip.
 set -euo pipefail
 
 REPO="AhmedFaseh/beam-fileshare"
-DEFAULT_VER="1.6.0"
+DEFAULT_VER="1.7.0"
 VER="$DEFAULT_VER"
 OUTDIR="./beam-download"
 EXTRACT=1
