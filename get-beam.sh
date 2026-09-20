@@ -15,11 +15,17 @@ DIR_GIVEN=0
 EXTRACT=1
 INSTALL=0
 MENU=0
+UNINSTALL=0
 
 usage() {
-  echo "Usage: get-beam.sh [--install] [--version X.Y.Z] [--dir PATH] [--install-menu] [--no-extract] [--help]"
-  echo "  --install: download to a temp dir, install into --dir (default ~/Beam),"
-  echo "             run install.sh on Linux, then delete the download (no leftovers)."
+  echo "Usage: get-beam.sh [--install] [--version X.Y.Z] [--dir PATH] [--install-menu] [--uninstall] [--no-extract] [--help]"
+  echo "  --install: one-file-style install — download to a temp dir, then:"
+  echo "             Linux: copy Beam into --dir (default ~/Beam, for the desktop icon)"
+  echo "                    + install single-file command ~/.local/bin/beam"
+  echo "                    + app-menu entry (no folder needed to run: just type 'beam')."
+  echo "             macOS: folder install + single-file command (/usr/local/bin or ~/.local/bin)."
+  echo "             The download is deleted afterwards (no leftovers)."
+  echo "  --uninstall: remove the beam command, menu entry, icon and install dir."
   echo "  Without --install: just download + extract into --dir (default ./beam-download), archive kept."
 }
 
@@ -29,6 +35,7 @@ while [ $# -gt 0 ]; do
     --dir) DIR_ARG="${2:-}"; DIR_GIVEN=1; shift 2 ;;
     --install) INSTALL=1; shift ;;
     --install-menu) MENU=1; shift ;;
+    --uninstall) UNINSTALL=1; shift ;;
     --no-extract) EXTRACT=0; shift ;;
     --help|-h) usage; exit 0 ;;
     *) echo "Unknown option: $1"; usage; exit 1 ;;
@@ -36,6 +43,18 @@ while [ $# -gt 0 ]; do
 done
 
 [ -z "$VER" ] && { echo "error: --version needs a value"; exit 1; }
+
+# --- uninstall first (needs no download) ---
+if [ "$UNINSTALL" = 1 ]; then
+  if [ "$DIR_GIVEN" = 1 ]; then UDIR="$DIR_ARG"; else UDIR="${HOME:-$PWD}/Beam"; fi
+  rm -f "$HOME/.local/bin/beam" /usr/local/bin/beam \
+        "$HOME/.local/share/applications/beam.desktop" \
+        "$HOME/.local/share/icons/hicolor/256x256/apps/beam.png" 2>/dev/null
+  command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
+  if [ -d "$UDIR" ]; then rm -rf "$UDIR" && echo "Removed dir: $UDIR"; fi
+  echo "Beam uninstalled (command + menu entry + icon removed) ✅"
+  exit 0
+fi
 
 # --- detect OS ---
 OS_RAW="$(uname -s 2>/dev/null || echo unknown)"
@@ -148,10 +167,57 @@ if [ "$EXTRACT" = 1 ]; then
         if [ -x "$TARGET/install.sh" ]; then
           if [ "$MENU" = 1 ]; then ( cd "$TARGET" && ./install.sh --install-menu ); else ( cd "$TARGET" && ./install.sh ); fi
         fi
+        # Single-file command: the Beam binary needs no sibling files at
+        # runtime (version is embedded via ldflags), so one binary IS Beam.
+        BIN_DIR="$HOME/.local/bin"
+        mkdir -p "$BIN_DIR" 2>/dev/null || true
+        if [ -x "$TARGET/Beam" ] && [ -d "$BIN_DIR" ]; then
+          cp -f "$TARGET/Beam" "$BIN_DIR/beam" && chmod +x "$BIN_DIR/beam"
+          echo "Single-file command installed: $BIN_DIR/beam ✅"
+        fi
+        # App-menu entry pointing at the single command (icon from the bundle).
+        APPS_DIR="$HOME/.local/share/applications"
+        ICON_DIR="$HOME/.local/share/icons/hicolor/256x256/apps"
+        if [ -f "$TARGET/icon.png" ]; then mkdir -p "$ICON_DIR" 2>/dev/null && cp -f "$TARGET/icon.png" "$ICON_DIR/beam.png" 2>/dev/null || true; fi
+        if [ -d "$APPS_DIR" ] && [ -x "$BIN_DIR/beam" ]; then
+          cat > "$APPS_DIR/beam.desktop" <<EOF2
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Beam
+Name[en]=Beam
+Comment=Share files between your devices over a private network - offline
+Comment[ar]=مشاركة الملفات بين أجهزتك عبر شبكة خاصة - بدون إنترنت
+Exec="$BIN_DIR/beam"
+Icon=beam
+Terminal=false
+StartupNotify=true
+Categories=Network;FileTransfer;
+Keywords=share;files;beam;
+StartupWMClass=Beam
+EOF2
+          chmod +x "$APPS_DIR/beam.desktop" 2>/dev/null || true
+          if command -v gio >/dev/null 2>&1; then gio set "$APPS_DIR/beam.desktop" metadata::trusted true 2>/dev/null || true; fi
+          if command -v update-desktop-database >/dev/null 2>&1; then update-desktop-database "$APPS_DIR" >/dev/null 2>&1 || true; fi
+          echo "App-menu entry installed: $APPS_DIR/beam.desktop ✅"
+        fi
         echo ""
-        echo "Run: double-click the Beam icon, or: $TARGET/Beam.sh"
+        case ":$PATH:" in
+          *":$BIN_DIR:"*) echo "Run from anywhere: beam" ;;
+          *) echo "One-time PATH setup, then run 'beam' from anywhere:"; echo "  echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.bashrc && source ~/.bashrc" ;;
+        esac
+        echo "Or double-click the Beam icon, or: $TARGET/Beam.sh"
         ;;
-      macos) echo "Next: open $TARGET — first time right-click Beam.command → Open" ;;
+      macos)
+        if [ -x "$TARGET/Beam" ]; then
+          if [ -d /usr/local/bin ] && [ -w /usr/local/bin ]; then
+            cp -f "$TARGET/Beam" /usr/local/bin/beam && chmod +x /usr/local/bin/beam && echo "Single-file command: /usr/local/bin/beam ✅"
+          else
+            mkdir -p "$HOME/.local/bin" 2>/dev/null || true
+            cp -f "$TARGET/Beam" "$HOME/.local/bin/beam" && chmod +x "$HOME/.local/bin/beam" && echo "Single-file command: $HOME/.local/bin/beam ✅ (add ~/.local/bin to PATH once)"
+          fi
+        fi
+        echo "Next: open $TARGET — first time right-click Beam.command → Open" ;;
       windows) echo "Next: open $TARGET in Explorer — double-click Beam.bat" ;;
     esac
   else
