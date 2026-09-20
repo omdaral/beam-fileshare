@@ -10,6 +10,8 @@ Your files live in one place you know (`Downloads/Beam`), settings apply to the 
 
 > **Current version:** `v1.6.0` — the version number appears in a badge on the home page so you can confirm you are running the latest build.
 >
+> **Official site:** https://omdaral.github.io/beam-website/ — downloads, verification & help (AR/EN).
+>
 > **Docs:** [README_AR.md](README_AR.md) (العربية) · [HELP.md](HELP.md) (Troubleshooting عربي + English) · [DOWNLOAD.md](DOWNLOAD.md) (all download links).
 
 ## Download (ready to use — pick your OS)
