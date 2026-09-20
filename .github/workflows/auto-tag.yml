@@ -1,0 +1,34 @@
+# Beam — automatic version tags: pushing a VERSION bump to main creates the
+# matching tag (v1.7.0 must match VERSION), which in turn triggers the Release
+# workflow. No manual `git tag` needed anymore — bump VERSION, push, done.
+# Tag pushes do NOT re-trigger this workflow (branches-only filter), so there
+# is no loop: main push -> tag -> Release build -> GitHub Release page.
+name: Auto-tag
+
+on:
+  push:
+    branches: [main]
+    paths: [VERSION]
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create matching version tag if missing
+        run: |
+          VER="$(tr -d ' \t\r\n' < VERSION)"
+          TAG="v$VER"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists — nothing to do."
+            exit 0
+          fi
+          git tag "$TAG"
+          git push origin "$TAG"
+          echo "Pushed $TAG — the Release workflow will build it now."
