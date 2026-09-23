@@ -14,10 +14,10 @@ This is the central help file (Arabic + English). For the full install guide see
 - Easiest way (auto-detects your OS/arch):
   أسهل طريقة (تكتشف نظامك تلقائياً):
   ```bash
-  curl -sSL https://raw.githubusercontent.com/AhmedFaseh/beam-fileshare/main/get-beam.sh | bash -s -- --install
+  curl -sSL https://raw.githubusercontent.com/omdaral/beam-fileshare/main/get-beam.sh | bash -s -- --install
   ```
-- Manual: open [DOWNLOAD.md](DOWNLOAD.md) or the [Releases page](https://github.com/AhmedFaseh/beam-fileshare/releases/latest) and pick your row (Windows / Linux / Mac × amd64/arm64, Android APK, or system packages).
-  يدوياً: افتح [DOWNLOAD.md](DOWNLOAD.md) أو [صفحة Releases](https://github.com/AhmedFaseh/beam-fileshare/releases/latest) واختر صف نظامك.
+- Manual: open [DOWNLOAD.md](DOWNLOAD.md) or the [Releases page](https://github.com/omdaral/beam-fileshare/releases/latest) and pick your row (Windows / Linux / Mac × amd64/arm64, Android APK, or system packages).
+  يدوياً: افتح [DOWNLOAD.md](DOWNLOAD.md) أو [صفحة Releases](https://github.com/omdaral/beam-fileshare/releases/latest) واختر صف نظامك.
 - Releases page shows `404`? The repo is still **Private** or the `v1.7.1` tag was never pushed — make the repo Public and run `git push origin main v1.7.1`, then the `Release` workflow publishes all assets.
   صفحة Releases تعطي `404`؟ المستودع ما زال **خاصاً** أو تاج `v1.7.1` لم يُدفع — اجعله Public ونفّذ الدفع، وسيبني الـ workflow كل الأصول تلقائياً.
 - Verify integrity: compare SHA256 with `dist/SHA256SUMS` / `MANIFEST.json` attached to the release:
@@ -74,7 +74,7 @@ Host copies to `~/Downloads/Beam`. / المضيف ينسخ إلى `~/Downloads/B
   `Beam.prev` نسخة سابقة **للرجوع فقط** — لا توزّعها.
 - Login link is always on port **2004**: `http://<ip>:2004`. Encrypted LAN: run with `--tls` and open `https://<ip>:2004`.
   رابط الدخول دائماً على المنفذ **2004**.
-- iPhone: no native app — Safari → **Add to Home Screen**. Android native APK: download from [Releases](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-android.apk) (allow "unknown sources" once); build guide in `mobile/SETUP.md` is for developers only.
+- iPhone: no native app — Safari → **Add to Home Screen**. Android native APK: download from [Releases](https://github.com/omdaral/beam-fileshare/releases/latest/download/Beam-1.7.1-android.apk) (allow "unknown sources" once); build guide in `mobile/SETUP.md` is for developers only.
   آيفون: بدون تطبيق — من Safari اختر Add to Home Screen. أندرويد: حمّل الـ APK من Releases.
 - Still stuck? Run `./Beam --help` — if it prints commands the binary is fine (icon/path issue). Copy the terminal output when asking for help.
   ما زالت المشكلة؟ نفّذ `./Beam --help` — لو طبع الأوامر فالبرنامج سليم والمشكلة في الأيقونة/المسار.

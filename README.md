@@ -1,38 +1,41 @@
-# Beam — Share your files between your devices in one click
+# Beam FileShare — Local Wi-Fi File Sharing for Windows, macOS, Linux & Android
 
-[![Release](https://img.shields.io/github/v/release/AhmedFaseh/beam-fileshare?label=release)](https://github.com/AhmedFaseh/beam-fileshare/releases/latest)
-[![CI](https://github.com/AhmedFaseh/beam-fileshare/actions/workflows/ci.yml/badge.svg)](https://github.com/AhmedFaseh/beam-fileshare/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/omdaral/beam-fileshare?label=release)](https://github.com/omdaral/beam-fileshare/releases/latest)
+[![CI](https://github.com/omdaral/beam-fileshare/actions/workflows/ci.yml/badge.svg)](https://github.com/omdaral/beam-fileshare/actions/workflows/ci.yml)
 [![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go)](goserver/go.mod)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-One small program per OS — **no Python and nothing to install** on your machine.
-Your files live in one place you know (`Downloads/Beam`), settings apply to the current session only, and there are no scattered files next to the program.
+Beam FileShare is a free, open-source local Wi-Fi file-sharing app written in Go. Run it on a Windows, macOS, Linux, or Android device; other devices open its browser link to upload or download files over the same network. Transfers use your local network instead of cloud storage, and receivers do not need an account or the app installed.
+
+The desktop builds are portable, with no Python runtime required. Your files live in one place you know (`Downloads/Beam`), settings apply to the current session only, and there are no scattered files next to the program.
 
 > **Current version:** `v1.7.1` — the version number appears in a badge on the home page so you can confirm you are running the latest build.
 >
 > **Official site:** https://omdaral.github.io/beam-website/ — downloads, verification & help (EN/AR).
 >
 > **Docs:** [README_AR.md](README_AR.md) (العربية) · [HELP.md](HELP.md) (Troubleshooting عربي + English) · [DOWNLOAD.md](DOWNLOAD.md) (all download links).
+>
+> **Guides:** [Share files over Wi-Fi without cloud uploads](https://omdaral.github.io/beam-website/guides/share-files-over-wifi/) · [Transfer between Android and Windows](https://omdaral.github.io/beam-website/guides/android-to-windows-file-sharing/).
 
 ## Download (ready to use — pick your OS)
 
 > Download from **GitHub Releases** (no build needed). One-click script or direct link — both give the same files:
 >
 > ```bash
-> curl -sSL https://raw.githubusercontent.com/AhmedFaseh/beam-fileshare/main/get-beam.sh | bash -s -- --install
+> curl -sSL https://raw.githubusercontent.com/omdaral/beam-fileshare/main/get-beam.sh | bash -s -- --install
 > ```
 >
-> Or open the full list with checksums: [DOWNLOAD.md](DOWNLOAD.md) · [Releases page](https://github.com/AhmedFaseh/beam-fileshare/releases/latest).
+> Or open the full list with checksums: [DOWNLOAD.md](DOWNLOAD.md) · [Releases page](https://github.com/omdaral/beam-fileshare/releases/latest).
 
 | OS | Direct download (v1.7.1) | Launch |
 |---|---|---|
-| Linux amd64 | [Beam-1.7.1-linux-amd64.tar.gz](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-linux-amd64.tar.gz) | Extract, run `./install.sh` once, double-click the **Beam** icon |
-| Linux arm64 | [Beam-1.7.1-linux-arm64.tar.gz](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-linux-arm64.tar.gz) | Same as above (Raspberry Pi / ARM servers) |
-| Windows amd64 | [Beam-1.7.1-windows-amd64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-windows-amd64.zip) | Keep `Beam.exe` + `Beam.bat` + `VERSION` together, double-click `Beam.bat` |
-| Windows arm64 | [Beam-1.7.1-windows-arm64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-windows-arm64.zip) | Same as above (Snapdragon / ARM laptops) |
-| Mac Intel | [Beam-1.7.1-macos-amd64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-macos-amd64.zip) | Keep `Beam` + `Beam.command` + `VERSION` together, double-click `Beam.command` |
-| Mac Apple Silicon | [Beam-1.7.1-macos-arm64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-macos-arm64.zip) | Same as above (M1/M2/M3) |
-| Android | [Beam-1.7.1-android.apk](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-android.apk) | Copy the APK to the phone and install (allow "unknown sources" once) |
+| Linux amd64 | [Beam-1.7.1-linux-amd64.tar.gz](https://github.com/omdaral/beam-fileshare/releases/latest/download/Beam-1.7.1-linux-amd64.tar.gz) | Extract, run `./install.sh` once, double-click the **Beam** icon |
+| Linux arm64 | [Beam-1.7.1-linux-arm64.tar.gz](https://github.com/omdaral/beam-fileshare/releases/latest/download/Beam-1.7.1-linux-arm64.tar.gz) | Same as above (Raspberry Pi / ARM servers) |
+| Windows amd64 | [Beam-1.7.1-windows-amd64.zip](https://github.com/omdaral/beam-fileshare/releases/latest/download/Beam-1.7.1-windows-amd64.zip) | Keep `Beam.exe` + `Beam.bat` + `VERSION` together, double-click `Beam.bat` |
+| Windows arm64 | [Beam-1.7.1-windows-arm64.zip](https://github.com/omdaral/beam-fileshare/releases/latest/download/Beam-1.7.1-windows-arm64.zip) | Same as above (Snapdragon / ARM laptops) |
+| Mac Intel | [Beam-1.7.1-macos-amd64.zip](https://github.com/omdaral/beam-fileshare/releases/latest/download/Beam-1.7.1-macos-amd64.zip) | Keep `Beam` + `Beam.command` + `VERSION` together, double-click `Beam.command` |
+| Mac Apple Silicon | [Beam-1.7.1-macos-arm64.zip](https://github.com/omdaral/beam-fileshare/releases/latest/download/Beam-1.7.1-macos-arm64.zip) | Same as above (M1/M2/M3) |
+| Android | [Beam-1.7.1-android.apk](https://github.com/omdaral/beam-fileshare/releases/latest/download/Beam-1.7.1-android.apk) | Copy the APK to the phone and install (allow "unknown sources" once) |
 | iPhone | No app — Safari → **Add to Home Screen** | Opens fullscreen like an app |
 
 > Not sure which file? Run the one-click script above — it detects your OS/arch automatically (`get-beam.sh`).
@@ -86,7 +89,7 @@ Your files live in one place you know (`Downloads/Beam`), settings apply to the 
 5. The **network status** card shows the Wi-Fi QR + link QR + copy button + share-folder path + auto-shutdown counter.
 6. Settings, network, and log are behind the ⚙️ button at the top — **from the host device only**, no remote control.
 
-> **Native Android app (optional):** download the APK from the [Releases page](https://github.com/AhmedFaseh/beam-fileshare/releases/latest) — no build needed. Build from source only if you modify the app: see `mobile/SETUP.md`, then `./mobile/build-apk.sh`.
+> **Native Android app (optional):** download the APK from the [Releases page](https://github.com/omdaral/beam-fileshare/releases/latest) — no build needed. Build from source only if you modify the app: see `mobile/SETUP.md`, then `./mobile/build-apk.sh`.
 
 ---
 
@@ -140,7 +143,7 @@ File sharing works through a unified file registry rooted at `~/Downloads/Beam-T
 
 ## Installing as system packages (optional)
 
-- **Ready-made portable packages:** [Releases page](https://github.com/AhmedFaseh/beam-fileshare/releases/latest) — copy the right package to any machine and double-click, no install. Full matrix in [DOWNLOAD.md](DOWNLOAD.md).
+- **Ready-made portable packages:** [Releases page](https://github.com/omdaral/beam-fileshare/releases/latest) — copy the right package to any machine and double-click, no install. Full matrix in [DOWNLOAD.md](DOWNLOAD.md).
 - **Debian / Ubuntu:** `.deb` from Releases (`beam-fileshare_1.7.1-1_amd64.deb` / `_arm64.deb`) — adds an icon and the `beam` command.
 - **AppImage / Fedora / Arch / Flatpak:** see [DOWNLOAD.md](DOWNLOAD.md) + `packaging/README.md` and `PACKAGING_NOTES.md`.
 - Full build from source: `./build-all.sh` then `./packaging/build-packages.sh` — or `./publish.sh` for everything in one go.

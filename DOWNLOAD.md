@@ -1,14 +1,14 @@
-# Beam — Download / التحميل
+# Beam FileShare Downloads — Wi-Fi file sharing / تحميل Beam FileShare
 
 > One-click install (detects your OS/arch automatically):
 > تثبيت بنقرة واحدة (يكتشف نظامك تلقائياً):
 >
 > ```bash
-> curl -sSL https://raw.githubusercontent.com/AhmedFaseh/beam-fileshare/main/get-beam.sh | bash -s -- --install
+> curl -sSL https://raw.githubusercontent.com/omdaral/beam-fileshare/main/get-beam.sh | bash -s -- --install
 > ```
 >
-> Or pick your file manually below. All files live on the [Releases page](https://github.com/AhmedFaseh/beam-fileshare/releases/latest) with `SHA256SUMS` + `MANIFEST.json` for verification.
-> أو اختر ملفك يدوياً من الجداول بالأسفل. كل الملفات على [صفحة Releases](https://github.com/AhmedFaseh/beam-fileshare/releases/latest) مع بصمات التحقق.
+> Or pick your file manually below. All files live on the [Releases page](https://github.com/omdaral/beam-fileshare/releases/latest) with `SHA256SUMS` + `MANIFEST.json` for verification.
+> أو اختر ملفك يدوياً من الجداول بالأسفل. كل الملفات على [صفحة Releases](https://github.com/omdaral/beam-fileshare/releases/latest) مع بصمات التحقق.
 
 Current version: `v1.7.1` — الإصدار الحالي.
 
@@ -20,12 +20,12 @@ No install, no admin rights. Just extract and double-click. بدون تثبيت 
 
 | Your system / نظامك | File / الملف | After download / بعد التحميل |
 |---|---|---|
-| Linux 64-bit (Intel/AMD) | [Beam-1.7.1-linux-amd64.tar.gz](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-linux-amd64.tar.gz) | `tar xzf *.tar.gz && cd Beam-* && ./install.sh` then double-click **Beam** |
-| Linux ARM (Raspberry Pi / ARM server) | [Beam-1.7.1-linux-arm64.tar.gz](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-linux-arm64.tar.gz) | Same as above / نفس الخطوات |
-| Windows 64-bit (Intel/AMD) | [Beam-1.7.1-windows-amd64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-windows-amd64.zip) | Keep `Beam.exe` + `Beam.bat` together, double-click `Beam.bat` |
-| Windows ARM (Snapdragon) | [Beam-1.7.1-windows-arm64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-windows-arm64.zip) | Same as above / نفس الخطوات |
-| Mac Intel | [Beam-1.7.1-macos-amd64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-macos-amd64.zip) | Keep `Beam` + `Beam.command` together; first time: right-click → **Open** |
-| Mac Apple Silicon (M1/M2/M3) | [Beam-1.7.1-macos-arm64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-macos-arm64.zip) | Same as above / نفس الخطوات |
+| Linux 64-bit (Intel/AMD) | [Beam-1.7.1-linux-amd64.tar.gz](https://github.com/omdaral/beam-fileshare/releases/latest/download/Beam-1.7.1-linux-amd64.tar.gz) | `tar xzf *.tar.gz && cd Beam-* && ./install.sh` then double-click **Beam** |
+| Linux ARM (Raspberry Pi / ARM server) | [Beam-1.7.1-linux-arm64.tar.gz](https://github.com/omdaral/beam-fileshare/releases/latest/download/Beam-1.7.1-linux-arm64.tar.gz) | Same as above / نفس الخطوات |
+| Windows 64-bit (Intel/AMD) | [Beam-1.7.1-windows-amd64.zip](https://github.com/omdaral/beam-fileshare/releases/latest/download/Beam-1.7.1-windows-amd64.zip) | Keep `Beam.exe` + `Beam.bat` together, double-click `Beam.bat` |
+| Windows ARM (Snapdragon) | [Beam-1.7.1-windows-arm64.zip](https://github.com/omdaral/beam-fileshare/releases/latest/download/Beam-1.7.1-windows-arm64.zip) | Same as above / نفس الخطوات |
+| Mac Intel | [Beam-1.7.1-macos-amd64.zip](https://github.com/omdaral/beam-fileshare/releases/latest/download/Beam-1.7.1-macos-amd64.zip) | Keep `Beam` + `Beam.command` together; first time: right-click → **Open** |
+| Mac Apple Silicon (M1/M2/M3) | [Beam-1.7.1-macos-arm64.zip](https://github.com/omdaral/beam-fileshare/releases/latest/download/Beam-1.7.1-macos-arm64.zip) | Same as above / نفس الخطوات |
 
 How to know amd64 vs arm64? / كيف تعرف معماريتك؟
 
@@ -40,7 +40,7 @@ Mac: Apple menu → About This Mac → Chip (Intel = amd64, Apple M* = arm64).
 
 | Device | File | Install |
 |---|---|---|
-| Android | [Beam-1.7.1-android.apk](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-android.apk) (~25MB) | Copy to phone → open → allow "unknown sources" once → open Beam → **Start server** |
+| Android | [Beam-1.7.1-android.apk](https://github.com/omdaral/beam-fileshare/releases/latest/download/Beam-1.7.1-android.apk) (~25MB) | Copy to phone → open → allow "unknown sources" once → open Beam → **Start server** |
 | iPhone | No app needed | Join the same Wi-Fi → open the link in Safari → Share → **Add to Home Screen** |
 
 Developers only: building the APK from source needs ~1.5GB of tools (Node 22 + JDK 21 + Android SDK + Go) — see `mobile/SETUP.md`. End users should just download the APK above.
@@ -49,11 +49,11 @@ Developers only: building the APK from source needs ~1.5GB of tools (Node 22 + J
 
 | Distro | File | Install |
 |---|---|---|
-| Debian / Ubuntu 64-bit | [beam-fileshare_1.7.1-1_amd64.deb](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/beam-fileshare_1.7.1-1_amd64.deb) | `sudo dpkg -i *.deb` (adds icon + `beam` command) |
-| Debian / Ubuntu ARM | [beam-fileshare_1.7.1-1_arm64.deb](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/beam-fileshare_1.7.1-1_arm64.deb) | Same / نفس الأمر |
-| AppImage 64-bit | [Beam-1.7.1-x86_64.AppImage](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-x86_64.AppImage) | `chmod +x *.AppImage && ./Beam-*.AppImage` (needs `libfuse2`: `sudo apt install libfuse2`) |
-| AppImage ARM | [Beam-1.7.1-aarch64.AppImage](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-aarch64.AppImage) | Same / نفس الأمر |
-| Fedora (x86_64) | [beam-fileshare-1.7.1-1.x86_64.rpm](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/beam-fileshare-1.7.1-1.x86_64.rpm) | `sudo dnf install *.rpm` |
+| Debian / Ubuntu 64-bit | [beam-fileshare_1.7.1-1_amd64.deb](https://github.com/omdaral/beam-fileshare/releases/latest/download/beam-fileshare_1.7.1-1_amd64.deb) | `sudo dpkg -i *.deb` (adds icon + `beam` command) |
+| Debian / Ubuntu ARM | [beam-fileshare_1.7.1-1_arm64.deb](https://github.com/omdaral/beam-fileshare/releases/latest/download/beam-fileshare_1.7.1-1_arm64.deb) | Same / نفس الأمر |
+| AppImage 64-bit | [Beam-1.7.1-x86_64.AppImage](https://github.com/omdaral/beam-fileshare/releases/latest/download/Beam-1.7.1-x86_64.AppImage) | `chmod +x *.AppImage && ./Beam-*.AppImage` (needs `libfuse2`: `sudo apt install libfuse2`) |
+| AppImage ARM | [Beam-1.7.1-aarch64.AppImage](https://github.com/omdaral/beam-fileshare/releases/latest/download/Beam-1.7.1-aarch64.AppImage) | Same / نفس الأمر |
+| Fedora (x86_64) | [beam-fileshare-1.7.1-1.x86_64.rpm](https://github.com/omdaral/beam-fileshare/releases/latest/download/beam-fileshare-1.7.1-1.x86_64.rpm) | `sudo dnf install *.rpm` |
 
 Arch / Flatpak: see `packaging/README.md` (build from the tag — Flathub app-id cannot change after first acceptance).
 
