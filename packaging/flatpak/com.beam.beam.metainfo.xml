@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- TODO(packaging): finalize the app-id BEFORE first Flathub submission
      (it is immutable afterwards; ideally io.github.<your-account>.Beam).
-     TODO: add upstream LICENSE and set project_license + homepage url. -->
+     TODO: set the homepage url. -->
 <component type="desktop-application">
   <id>com.beam.beam</id>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>TODO: add upstream LICENSE</project_license>
+  <project_license>LicenseRef-omdaral-Beam-NonCommercial-1.0</project_license>
   <name>Beam</name>
   <summary>Direct file sharing between devices over a private network</summary>
   <summary xml:lang="ar">مشاركة مباشرة للملفات بين الأجهزة عبر شبكة خاصة</summary>

@@ -57,7 +57,7 @@ File-sharing hardening + easier UX. ~50 issues fixed (backend races/paths/limits
   Mac Gatekeeper and Windows SmartScreen.
 - `docs/screenshots/README.md` — placeholder guide for the 3 required
   screenshots (homepage + QR, mobile, file tree) until real images are added.
-- `LICENSE` — MIT license (Ahmed Faseh, 2026).
+- `LICENSE` — Beam FileShare Non-Commercial License 1.0 (omdaral, 2026).
 
 ### Fixed
 

@@ -79,7 +79,7 @@ cat > "$PKG/usr/share/lintian/overrides/beam-fileshare" <<EOF3
 beam-fileshare binary: statically-linked-binary [usr/libexec/beam/Beam]
 EOF3
 cat > "$PKG/usr/share/doc/beam-fileshare/copyright" <<EOF
-Copyright (c) 2026 Beam Project. All rights reserved.
+Copyright (c) 2026 omdaral. All rights reserved.
 Beam file sharing — packaged from local source.
 TODO(packaging): add upstream LICENSE file and reference it here.
 EOF

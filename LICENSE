@@ -1,21 +1,66 @@
-MIT License
+Beam FileShare Non-Commercial License 1.0
+Copyright (c) 2026 omdaral
 
-Copyright (c) 2026 Ahmed Faseh
+This license applies to Beam FileShare project material distributed with
+this notice from the commit that introduces this license onward. Versions
+distributed before that commit, including releases through v1.7.1, remain
+under the license terms that accompanied those versions. This change does not
+withdraw or modify permissions already granted for earlier copies.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. Definitions
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+"Project" means Beam FileShare and the source files authored for it by
+omdaral, excluding third-party material identified by its own copyright or
+license notice.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+"Commercial Use" means any use primarily intended for or directed toward
+commercial advantage, monetary compensation, or the operation of a for-profit
+business. It includes use on behalf of a business, use in a paid service, or
+use as part of a product or service offered for payment, even when a particular
+copy of the Project is provided at no charge.
+
+"Non-Commercial Purpose" means a purpose that is not Commercial Use.
+
+"You" means the individual or legal entity exercising permissions under this
+license.
+
+2. Non-commercial permission
+
+Subject to this license, omdaral grants You a worldwide, royalty-free,
+non-exclusive permission to download, run, copy, modify, and share the
+Project solely for Non-Commercial Purposes. You may not charge for the
+Project or for access to it. When sharing a copy or modified version, You
+must include this license and preserve existing copyright and attribution
+notices.
+
+3. Commercial permission
+
+This license does not grant permission for Commercial Use. Commercial Use
+requires a separate written license from omdaral before that use begins.
+No silence, prior access, or distribution of the Project grants such
+permission.
+
+4. Third-party material
+
+Third-party components are not relicensed by this document. Their original
+copyright notices and license terms continue to apply. If those terms conflict
+with this license, they govern the applicable third-party component.
+
+5. Termination
+
+The permissions in Section 2 terminate automatically if You materially
+violate this license. They are reinstated if the violation is cured within
+30 days after You become aware of it, unless omdaral gives written notice
+that reinstatement is denied.
+
+6. Disclaimer
+
+THE PROJECT IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. TO THE MAXIMUM EXTENT
+PERMITTED BY LAW, omdaral WILL NOT BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY ARISING FROM, OUT OF, OR IN CONNECTION WITH THE PROJECT OR ITS USE.
+
+This is a custom source-available license. It is not the GNU General Public
+License, is not an Open Source Initiative-approved open-source license, and
+does not permit commercial use without separate written permission.
