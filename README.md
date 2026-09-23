@@ -3,9 +3,9 @@
 [![Release](https://img.shields.io/github/v/release/omdaral/beam-fileshare?label=release)](https://github.com/omdaral/beam-fileshare/releases/latest)
 [![CI](https://github.com/omdaral/beam-fileshare/actions/workflows/ci.yml/badge.svg)](https://github.com/omdaral/beam-fileshare/actions/workflows/ci.yml)
 [![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go)](goserver/go.mod)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License: Beam Non-Commercial](https://img.shields.io/badge/license-Beam_Non--Commercial-orange.svg)](LICENSE)
 
-Beam FileShare is a free, open-source local Wi-Fi file-sharing app written in Go. Run it on a Windows, macOS, Linux, or Android device; other devices open its browser link to upload or download files over the same network. Transfers use your local network instead of cloud storage, and receivers do not need an account or the app installed.
+Beam FileShare is free for personal and other non-commercial use under the current custom license. It is a source-available local Wi-Fi file-sharing app written in Go. Run it on a Windows, macOS, Linux, or Android device; other devices open its browser link to upload or download files over the same network. Transfers use your local network instead of cloud storage, and receivers do not need an account or the app installed. Commercial use of versions covered by the current license requires prior written permission from omdaral. The published v1.7.1 and earlier releases remain under the MIT terms they shipped with; see [LICENSE](LICENSE).
 
 The desktop builds are portable, with no Python runtime required. Your files live in one place you know (`Downloads/Beam`), settings apply to the current session only, and there are no scattered files next to the program.
 
@@ -187,4 +187,4 @@ go -C goserver test ./...                                       # all tests
 
 - Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). One focused change per PR, tests must pass (`go -C goserver test ./...`), no binaries.
 - Security model: the Wi-Fi/hotspot password is the only access control — see [SECURITY.md](SECURITY.md). Report vulnerabilities privately.
-- MIT — see [LICENSE](LICENSE). Changelog: [CHANGELOG.md](CHANGELOG.md).
+- Beam FileShare Non-Commercial License 1.0 — free for personal and non-commercial use; commercial use requires prior written permission from omdaral. See [LICENSE](LICENSE). Changelog: [CHANGELOG.md](CHANGELOG.md).

@@ -6,7 +6,7 @@ Name:           beam-fileshare
 Version:        %{ver}
 Release:        1%{?dist}
 Summary:        Direct file sharing between devices over a private network
-License:        TODO: add upstream LICENSE
+License:        LicenseRef-omdaral-Beam-NonCommercial-1.0
 # URL: TODO project homepage (omitted: rpm tags take a single token)
 Source0:        beam-%{version}.tar.gz
 

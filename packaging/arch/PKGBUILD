@@ -8,7 +8,7 @@ pkgrel=1
 pkgdesc="Direct file sharing between devices over a private network (offline web UI)"
 arch=('x86_64' 'aarch64')
 url="TODO: project homepage"
-license=('custom:TODO-add-upstream-LICENSE')
+license=('custom:LicenseRef-omdaral-Beam-NonCommercial-1.0')
 depends=('curl' 'xdg-utils')
 optdepends=('libnotify: desktop notifications')
 # TODO(packaging): point to the real release tarball and fill sha256sums via updpkgsums
