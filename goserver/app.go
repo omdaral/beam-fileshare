@@ -23,7 +23,7 @@ var (
 	// AppVersion is injected at build time via:
 	//   go build -ldflags "-X fileshare.AppVersion=$VER"
 	// Fallback matches VERSION file so dev runs (go run) still report right.
-	AppVersion = "1.7.0"
+	AppVersion = "1.7.1"
 	ServerPort = 2004
 
 	// IsPhoneBuild is true when the engine runs inside the Android app

@@ -3,6 +3,12 @@
 All notable changes to Beam are documented here.
 The format is inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.7.1] — 2026-09-23
+
+### Added
+
+- Added an Arabic and English in-app sharing prompt that points recipients to the official downloads page and reminds them to use a trusted network.
+
 ## [1.7.0] — 2026-09-20
 
 File-sharing hardening + easier UX. ~50 issues fixed (backend races/paths/limits, security validation, frontend simplicity). No protocol break: upload/download/zip/registry APIs unchanged.
