@@ -1,6 +1,6 @@
 {
   "name": "beam-mobile",
-  "version": "1.6.0",
+  "version": "1.7.1",
   "private": true,
   "description": "Beam native wrapper (Capacitor) — reuses goserver/web 1:1, adds an Android foreground service so uploads survive the background.",
   "scripts": {

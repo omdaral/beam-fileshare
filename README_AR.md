@@ -3,7 +3,7 @@
 برنامج صغير واحد لكل نظام — **بدون Python وبدون تثبيت** على جهازك.
 ملفاتك في مكان واحد تعرفه (`Downloads/Beam`)، والإعدادات لجلسة التشغيل الحالية فقط، ولا توجد ملفات مبعثرة بجانب البرنامج.
 
-> **الإصدار الحالي:** `v1.7.0` — رقم الإصدار يظهر في شارة على الصفحة الرئيسية لتتأكد أنك تشغّل أحدث بناء.
+> **الإصدار الحالي:** `v1.7.1` — رقم الإصدار يظهر في شارة على الصفحة الرئيسية لتتأكد أنك تشغّل أحدث بناء.
 >
 > **الموقع الرسمي:** https://omdaral.github.io/beam-website/ — التحميل والتحقق والمساعدة (إنجليزي/عربي).
 >
@@ -21,15 +21,15 @@
 >
 > أو افتح القائمة الكاملة مع البصمات: [DOWNLOAD.md](DOWNLOAD.md) · [صفحة Releases](https://github.com/AhmedFaseh/beam-fileshare/releases/latest).
 
-| النظام | تحميل مباشر (v1.7.0) | التشغيل |
+| النظام | تحميل مباشر (v1.7.1) | التشغيل |
 |---|---|---|
-| Linux amd64 | [Beam-1.7.0-linux-amd64.tar.gz](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.0-linux-amd64.tar.gz) | فك الضغط ثم `./install.sh` ثم نقرة مزدوجة على أيقونة **Beam** |
-| Linux arm64 | [Beam-1.7.0-linux-arm64.tar.gz](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.0-linux-arm64.tar.gz) | نفس الخطوات (Raspberry Pi / سيرفرات ARM) |
-| Windows amd64 | [Beam-1.7.0-windows-amd64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.0-windows-amd64.zip) | ضع `Beam.exe` + `Beam.bat` + `VERSION` معاً ثم نقرة مزدوجة على `Beam.bat` |
-| Windows arm64 | [Beam-1.7.0-windows-arm64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.0-windows-arm64.zip) | نفس الخطوات (لابتوبات Snapdragon / ARM) |
-| Mac Intel | [Beam-1.7.0-macos-amd64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.0-macos-amd64.zip) | ضع `Beam` + `Beam.command` + `VERSION` معاً ثم نقرة مزدوجة على `Beam.command` |
-| Mac Apple Silicon | [Beam-1.7.0-macos-arm64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.0-macos-arm64.zip) | نفس الخطوات (M1/M2/M3) |
-| Android | [Beam-1.7.0-android.apk](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.0-android.apk) | انسخ الـ APK إلى الهاتف وثبّته (وافق على "مصادر غير معروفة" مرة واحدة) |
+| Linux amd64 | [Beam-1.7.1-linux-amd64.tar.gz](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-linux-amd64.tar.gz) | فك الضغط ثم `./install.sh` ثم نقرة مزدوجة على أيقونة **Beam** |
+| Linux arm64 | [Beam-1.7.1-linux-arm64.tar.gz](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-linux-arm64.tar.gz) | نفس الخطوات (Raspberry Pi / سيرفرات ARM) |
+| Windows amd64 | [Beam-1.7.1-windows-amd64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-windows-amd64.zip) | ضع `Beam.exe` + `Beam.bat` + `VERSION` معاً ثم نقرة مزدوجة على `Beam.bat` |
+| Windows arm64 | [Beam-1.7.1-windows-arm64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-windows-arm64.zip) | نفس الخطوات (لابتوبات Snapdragon / ARM) |
+| Mac Intel | [Beam-1.7.1-macos-amd64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-macos-amd64.zip) | ضع `Beam` + `Beam.command` + `VERSION` معاً ثم نقرة مزدوجة على `Beam.command` |
+| Mac Apple Silicon | [Beam-1.7.1-macos-arm64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-macos-arm64.zip) | نفس الخطوات (M1/M2/M3) |
+| Android | [Beam-1.7.1-android.apk](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-android.apk) | انسخ الـ APK إلى الهاتف وثبّته (وافق على "مصادر غير معروفة" مرة واحدة) |
 | iPhone | لا يوجد تطبيق — من Safari اختر **Add to Home Screen** | يعمل كأيقونة بملء الشاشة مثل التطبيق |
 
 > مش عارف أي ملف؟ شغّل سكربت النقرة الواحدة بالأعلى — يكتشف نظامك ومعماريتك تلقائياً (`get-beam.sh`).
@@ -72,7 +72,7 @@
 
 ### Android (تطبيق جاهز — بدون بناء)
 
-1. حمّل الـ APK الجاهز من [صفحة Releases](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.0-android.apk) — انسخه إلى الهاتف وافتحه.
+1. حمّل الـ APK الجاهز من [صفحة Releases](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-android.apk) — انسخه إلى الهاتف وافتحه.
 2. وافق على "التثبيت من مصادر غير معروفة" لهذه المرة.
 3. افتح Beam واضغط **"▶ تشغيل السيرفر"** — ستظهر الحالة **"يعمل الآن"** مع العنوان والـ QR.
 4. البناء من المصدر للمطورين فقط: [`mobile/SETUP.md`](mobile/SETUP.md).

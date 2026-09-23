@@ -30,13 +30,13 @@ modules:
       # TODO(flathub): switch to git tag source on submission, e.g.
       # - type: git
       #   url: https://github.com/USER/beam.git
-      #   tag: v1.6.0
+      #   tag: v1.7.1
       - type: dir
         path: ../..
     build-commands:
       - go -C goserver vet ./...
       - go -C goserver test -count=1 ./...
-      - go -C goserver build -trimpath -ldflags="-s -w -X fileshare.AppVersion=1.6.0" -o Beam-flatpak ./cmd/beam
+      - go -C goserver build -trimpath -ldflags="-s -w -X fileshare.AppVersion=1.7.1" -o Beam-flatpak ./cmd/beam
       - install -Dm755 Beam-flatpak /app/bin/Beam
       - install -Dm755 packaging/flatpak/beam-wrapper.sh /app/bin/beam
       - install -Dm644 packaging/flatpak/com.beam.beam.desktop /app/share/applications/com.beam.beam.desktop

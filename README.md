@@ -8,7 +8,7 @@
 One small program per OS — **no Python and nothing to install** on your machine.
 Your files live in one place you know (`Downloads/Beam`), settings apply to the current session only, and there are no scattered files next to the program.
 
-> **Current version:** `v1.7.0` — the version number appears in a badge on the home page so you can confirm you are running the latest build.
+> **Current version:** `v1.7.1` — the version number appears in a badge on the home page so you can confirm you are running the latest build.
 >
 > **Official site:** https://omdaral.github.io/beam-website/ — downloads, verification & help (EN/AR).
 >
@@ -24,15 +24,15 @@ Your files live in one place you know (`Downloads/Beam`), settings apply to the 
 >
 > Or open the full list with checksums: [DOWNLOAD.md](DOWNLOAD.md) · [Releases page](https://github.com/AhmedFaseh/beam-fileshare/releases/latest).
 
-| OS | Direct download (v1.7.0) | Launch |
+| OS | Direct download (v1.7.1) | Launch |
 |---|---|---|
-| Linux amd64 | [Beam-1.7.0-linux-amd64.tar.gz](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.0-linux-amd64.tar.gz) | Extract, run `./install.sh` once, double-click the **Beam** icon |
-| Linux arm64 | [Beam-1.7.0-linux-arm64.tar.gz](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.0-linux-arm64.tar.gz) | Same as above (Raspberry Pi / ARM servers) |
-| Windows amd64 | [Beam-1.7.0-windows-amd64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.0-windows-amd64.zip) | Keep `Beam.exe` + `Beam.bat` + `VERSION` together, double-click `Beam.bat` |
-| Windows arm64 | [Beam-1.7.0-windows-arm64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.0-windows-arm64.zip) | Same as above (Snapdragon / ARM laptops) |
-| Mac Intel | [Beam-1.7.0-macos-amd64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.0-macos-amd64.zip) | Keep `Beam` + `Beam.command` + `VERSION` together, double-click `Beam.command` |
-| Mac Apple Silicon | [Beam-1.7.0-macos-arm64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.0-macos-arm64.zip) | Same as above (M1/M2/M3) |
-| Android | [Beam-1.7.0-android.apk](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.0-android.apk) | Copy the APK to the phone and install (allow "unknown sources" once) |
+| Linux amd64 | [Beam-1.7.1-linux-amd64.tar.gz](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-linux-amd64.tar.gz) | Extract, run `./install.sh` once, double-click the **Beam** icon |
+| Linux arm64 | [Beam-1.7.1-linux-arm64.tar.gz](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-linux-arm64.tar.gz) | Same as above (Raspberry Pi / ARM servers) |
+| Windows amd64 | [Beam-1.7.1-windows-amd64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-windows-amd64.zip) | Keep `Beam.exe` + `Beam.bat` + `VERSION` together, double-click `Beam.bat` |
+| Windows arm64 | [Beam-1.7.1-windows-arm64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-windows-arm64.zip) | Same as above (Snapdragon / ARM laptops) |
+| Mac Intel | [Beam-1.7.1-macos-amd64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-macos-amd64.zip) | Keep `Beam` + `Beam.command` + `VERSION` together, double-click `Beam.command` |
+| Mac Apple Silicon | [Beam-1.7.1-macos-arm64.zip](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-macos-arm64.zip) | Same as above (M1/M2/M3) |
+| Android | [Beam-1.7.1-android.apk](https://github.com/AhmedFaseh/beam-fileshare/releases/latest/download/Beam-1.7.1-android.apk) | Copy the APK to the phone and install (allow "unknown sources" once) |
 | iPhone | No app — Safari → **Add to Home Screen** | Opens fullscreen like an app |
 
 > Not sure which file? Run the one-click script above — it detects your OS/arch automatically (`get-beam.sh`).
@@ -141,7 +141,7 @@ File sharing works through a unified file registry rooted at `~/Downloads/Beam-T
 ## Installing as system packages (optional)
 
 - **Ready-made portable packages:** [Releases page](https://github.com/AhmedFaseh/beam-fileshare/releases/latest) — copy the right package to any machine and double-click, no install. Full matrix in [DOWNLOAD.md](DOWNLOAD.md).
-- **Debian / Ubuntu:** `.deb` from Releases (`beam-fileshare_1.7.0-1_amd64.deb` / `_arm64.deb`) — adds an icon and the `beam` command.
+- **Debian / Ubuntu:** `.deb` from Releases (`beam-fileshare_1.7.1-1_amd64.deb` / `_arm64.deb`) — adds an icon and the `beam` command.
 - **AppImage / Fedora / Arch / Flatpak:** see [DOWNLOAD.md](DOWNLOAD.md) + `packaging/README.md` and `PACKAGING_NOTES.md`.
 - Full build from source: `./build-all.sh` then `./packaging/build-packages.sh` — or `./publish.sh` for everything in one go.
 

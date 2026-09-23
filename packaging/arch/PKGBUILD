@@ -3,7 +3,7 @@
 # Build on Arch: updpkgsums && makepkg -si  (then test: beam --help; beam)
 # AUR submit steps: packaging/README.md
 pkgname=beam-fileshare
-pkgver=1.6.0
+pkgver=1.7.1
 pkgrel=1
 pkgdesc="Direct file sharing between devices over a private network (offline web UI)"
 arch=('x86_64' 'aarch64')

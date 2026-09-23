@@ -2,13 +2,13 @@
 # Beam — one-click installer (auto-detects OS/arch, installs the right build, cleans up).
 # Usage:
 #   curl -sSL https://raw.githubusercontent.com/AhmedFaseh/beam-fileshare/main/get-beam.sh | bash -s -- --install
-#   bash get-beam.sh [--install] [--version 1.7.0] [--dir ~/Beam] [--install-menu] [--no-extract] [--help]
+#   bash get-beam.sh [--install] [--version 1.7.1] [--dir ~/Beam] [--install-menu] [--no-extract] [--help]
 # Detects: Linux/macOS/Windows(Git-Bash/MSYS/Cygwin/WSL) x amd64/arm64.
 # Downloads from GitHub Releases (no build tools needed). stdlib only: sh + curl/wget + tar/unzip.
 set -euo pipefail
 
 REPO="AhmedFaseh/beam-fileshare"
-DEFAULT_VER="1.7.0"
+DEFAULT_VER="1.7.1"
 VER="$DEFAULT_VER"
 DIR_ARG=""
 DIR_GIVEN=0
