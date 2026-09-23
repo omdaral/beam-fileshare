@@ -7,7 +7,7 @@
 | 1.6.x   | :white_check_mark: |
 | < 1.6   | :x:                |
 
-We support the latest `v1.6.x` release published on the [Releases page](https://github.com/AhmedFaseh/beam-fileshare/releases/latest). Older builds are not patched — please upgrade with `get-beam.sh` or from `DOWNLOAD.md`.
+We support the latest `v1.6.x` release published on the [Releases page](https://github.com/omdaral/beam-fileshare/releases/latest). Older builds are not patched — please upgrade with `get-beam.sh` or from `DOWNLOAD.md`.
 
 ## Security model (please read)
 
@@ -24,7 +24,7 @@ Choose your network carefully. Do not run Beam on a network you do not trust.
 
 **Do not open a public issue for security reports.**
 
-- Open a [private security advisory](https://github.com/AhmedFaseh/beam-fileshare/security/advisories/new) or contact the maintainer via the profile email.
+- Open a [private security advisory](https://github.com/omdaral/beam-fileshare/security/advisories/new) or contact the maintainer via the profile email.
 - Include: Beam version, OS/arch, exact command/flags, network mode (LAN/hotspot/TLS?), steps to reproduce, and impact.
 - We aim to acknowledge within 72 hours, fix in a patch release, and credit reporters in `CHANGELOG.md` (unless you prefer to stay anonymous).
 
